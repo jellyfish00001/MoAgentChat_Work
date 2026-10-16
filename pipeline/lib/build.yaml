@@ -14,6 +14,7 @@
   variables:
     SERVICE_NAME: hello-server
     IMAGE_PATH: fin_ai_agent # Harbor 專案底下的資料夾（只能小寫）
+    BUILD_PROXY: http://whqproxys.wistron.com:8080 # runner 不能直接連外網，build 時 pip 透過公司 proxy 下載套件
   before_script:
     # 檢查必要的 GitLab CI/CD Variables 有沒有設定（密碼只顯示是否有值，不印出內容）
     - |
@@ -27,6 +28,9 @@
     - SERVICE_VERSION=`TZ=UTC-8 date +%Y%m%d%H%M`-${CI_COMMIT_SHORT_SHA} # 版本號：台灣時間＋commit，例如 202610151430-a1b2c3d
     - IMAGE=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${SERVICE_NAME}-${DEPLOY_ENV}:$SERVICE_VERSION # 例如 mllf00/fin_ai_agent/hello-server-qas:202610151430
     - echo "${HARBOR_PASSWORD}" | docker login -u "${HARBOR_USER}" --password-stdin "${HARBOR_URL}"
-    - docker build -f ./server/Dockerfile -t $IMAGE ./server
+    - docker build -f ./server/Dockerfile -t $IMAGE
+      --build-arg HTTP_PROXY=$BUILD_PROXY --build-arg HTTPS_PROXY=$BUILD_PROXY
+      --build-arg NO_PROXY=localhost,127.0.0.1,.wistron.com
+      ./server
     - docker push $IMAGE
     - echo "✅ 已推送到 Harbor：$IMAGE"
