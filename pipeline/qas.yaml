@@ -1,0 +1,14 @@
+# QAS：push 到 qas 分支時觸發
+.qas:
+  variables:
+    DEPLOY_ENV: qas
+    DEPLOY_BRANCH: qas
+
+qas-build-image:
+  extends: [.build-image, .qas]
+
+# qas-secret-scan:
+#   extends: [.secret-scan, .qas]
+
+# qas-trivy-dockerfile-scan:
+#   extends: [.trivy-dockerfile-scan, .qas]

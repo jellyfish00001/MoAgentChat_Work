@@ -1,0 +1,24 @@
+# 父類別：安全掃描（需打開 .gitlab-ci.yml 的公司範本 include）
+# 子類別只要 extends，並設定 DEPLOY_BRANCH
+
+# .secret-scan:
+#   stage: verify
+#   tags:
+#     - k8s-runners
+#   rules:
+#     - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+#   variables:
+#     WISTRON_CI_PARAMETERS: "auto"
+#   extends: .gitleaks_scan
+
+# .trivy-dockerfile-scan:
+#   stage: verify
+#   tags:
+#     - k8s-runners
+#   rules:
+#     - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+#       changes:
+#         - server/**/*
+#   variables:
+#     WISTRON_CI_PARAMETERS: './server/Dockerfile'
+#   extends: .trivy_dockerfile_scan
