@@ -1,0 +1,14 @@
+# PRD：push 到 main 分支時觸發
+.prd:
+  variables:
+    DEPLOY_ENV: prd
+    DEPLOY_BRANCH: main
+
+prd-build-image:
+  extends: [.build-image, .prd]
+
+# prd-secret-scan:
+#   extends: [.secret-scan, .prd]
+
+# prd-trivy-dockerfile-scan:
+#   extends: [.trivy-dockerfile-scan, .prd]

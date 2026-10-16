@@ -1,0 +1,32 @@
+# 父類別：build image 並推到 Harbor
+# 子類別只要 extends 這個 job，並設定 DEPLOY_ENV（環境）和 DEPLOY_BRANCH（觸發分支）
+.build-image:
+  stage: release
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - server/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+  image: ${HARBOR_URL}/base_image/docker:28-dind
+  tags:
+    - k8s-runners
+  variables:
+    SERVICE_NAME: hello-server
+    IMAGE_PATH: fin_ai_agent # Harbor 專案底下的資料夾（只能小寫）
+  before_script:
+    # 檢查必要的 GitLab CI/CD Variables 有沒有設定（密碼只顯示是否有值，不印出內容）
+    - |
+      for v in HARBOR_URL HARBOR_PROJECT HARBOR_USER HARBOR_PASSWORD; do
+        eval val=\$$v
+        if [ -z "$val" ]; then echo "❌ $v 沒有設定"; MISSING=1; fi
+      done
+      echo "HARBOR_URL=$HARBOR_URL HARBOR_PROJECT=$HARBOR_PROJECT HARBOR_USER=$HARBOR_USER"
+      [ -z "$MISSING" ] || exit 1
+  script:
+    - SERVICE_VERSION=`TZ=UTC-8 date +%Y%m%d%H%M`-${CI_COMMIT_SHORT_SHA} # 版本號：台灣時間＋commit，例如 202610151430-a1b2c3d
+    - IMAGE=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${SERVICE_NAME}-${DEPLOY_ENV}:$SERVICE_VERSION # 例如 mllf00/fin_ai_agent/hello-server-qas:202610151430
+    - echo "${HARBOR_PASSWORD}" | docker login -u "${HARBOR_USER}" --password-stdin "${HARBOR_URL}"
+    - docker build -f ./server/Dockerfile -t $IMAGE ./server
+    - docker push $IMAGE
+    - echo "✅ 已推送到 Harbor：$IMAGE"
