@@ -100,7 +100,7 @@
 > [!WARNING]
 > 以下是送出前（或核准後要追蹤）建議確認的地方：
 
-1. ~~只申請了 PRD~~ → **決定：先只用 PRD**，DEV／QAS 之後有需要再補申請。
+1. ~~只申請了 PRD~~ → 後來加開 QAS，目前是 PRD＋QAS；DEV 之後有需要再補申請。
 2. **Resource Quota 偏小**：1 core／1 GB 要跑 LangGraph Agent Server、Redis，之後還有前端，記憶體很可能不夠。建議至少 **2 core／4 GB** 起跳。
 3. **Storage 是 0**：Redis 如果要開 persistence，需要 PVC。PostgreSQL 走 WCP，不佔這裡的空間。
 4. **Project Code 和 Cost Center 跟 ASP 不一致**：ASP 填的是 `IB202512.506`／`ML0000`，WiCOP 這邊是空白／`MLLF00`。確認是否需要一致。

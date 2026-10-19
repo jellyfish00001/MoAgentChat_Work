@@ -1,11 +1,15 @@
-# PRD：push 到 main 分支時觸發
+# PRD：push 到 prd 分支（主分支）時推廣 QAS 測過的 image；打 v*.*.* tag 時加上版本號
+# 不跑 lint：程式碼在合併到 qas 時已經檢查過
 .prd:
   variables:
     DEPLOY_ENV: prd
-    DEPLOY_BRANCH: main
+    DEPLOY_BRANCH: prd
 
-prd-build-image:
-  extends: [.build-image, .prd]
+prd-promote-image:
+  extends: [.promote-image, .prd]
+
+prd-tag-version:
+  extends: [.tag-version, .prd]
 
 # prd-secret-scan:
 #   extends: [.secret-scan, .prd]

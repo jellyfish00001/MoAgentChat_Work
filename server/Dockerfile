@@ -27,6 +27,11 @@ RUN pip install --no-cache-dir -r requirements.txt && pip uninstall -y pip
 
 COPY main.py .
 
+# build 編號（CI 傳入），/version 會回傳；label 讓 PRD 推廣時能沿用同一個編號
+ARG BUILD_ID=local
+ENV BUILD_ID=${BUILD_ID}
+LABEL build-id=${BUILD_ID}
+
 USER 1000
 EXPOSE 8000
 

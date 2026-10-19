@@ -1,13 +1,5 @@
-# 父類別：build image 並推到 Harbor
-# 子類別只要 extends 這個 job，並設定 DEPLOY_ENV（環境）和 DEPLOY_BRANCH（觸發分支）
-.build-image:
-  stage: release
-  rules:
-    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
-      changes:
-        - server/**/*
-        - pipeline/**/*
-        - .gitlab-ci.yml
+# 共用設定：登入 Harbor、使用有 Docker 的 runner
+.harbor:
   image: ${HARBOR_URL}/base_image/docker:28-dind
   tags:
     - k8s-runners
@@ -23,10 +15,63 @@
       done
       echo "HARBOR_URL=$HARBOR_URL HARBOR_PROJECT=$HARBOR_PROJECT HARBOR_USER=$HARBOR_USER"
       [ -z "$MISSING" ] || exit 1
-  script:
-    - SERVICE_VERSION=`TZ=UTC-8 date +%Y%m%d%H%M`-${CI_COMMIT_SHORT_SHA} # 版本號：台灣時間＋commit，例如 202610151430-a1b2c3d
-    - IMAGE=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${SERVICE_NAME}-${DEPLOY_ENV}:$SERVICE_VERSION # 例如 mllf00/fin_ai_agent/hello-server-qas:202610151430
     - echo "${HARBOR_PASSWORD}" | docker login -u "${HARBOR_USER}" --password-stdin "${HARBOR_URL}"
-    - docker build -f ./server/Dockerfile -t $IMAGE ./server
-    - docker push $IMAGE
-    - echo "✅ 已推送到 Harbor：$IMAGE"
+    - REPO=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${SERVICE_NAME} # 完整名稱是 $REPO-<環境>
+    # 原始碼指紋：server/ 內容相同就相同，用來找出「QAS 測過的就是這份程式碼」的 image
+    - SRC_ID=src-$(find server -type f | sort | xargs sha256sum | sha256sum | cut -c1-12)
+
+# 父類別：build image 並推到 Harbor（QAS 用）
+# 子類別設定 DEPLOY_ENV（環境）和 DEPLOY_BRANCH（觸發分支）
+.build-image:
+  extends: .harbor
+  stage: release
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - server/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+  script:
+    - BUILD_ID=`TZ=UTC-8 date +%Y%m%d%H%M`-${CI_COMMIT_SHORT_SHA} # 台灣時間＋commit，例如 202610151430-a1b2c3d
+    - IMAGE=$REPO-$DEPLOY_ENV
+    - docker build -f ./server/Dockerfile --build-arg BUILD_ID=$BUILD_ID -t $IMAGE:$BUILD_ID -t $IMAGE:$SRC_ID ./server
+    - docker push $IMAGE:$BUILD_ID
+    - docker push $IMAGE:$SRC_ID
+    - echo "✅ 已推送到 Harbor：$IMAGE:$BUILD_ID"
+
+# 父類別：不重新 build，把 SOURCE_ENV 測過的 image 推廣到 DEPLOY_ENV（PRD 用）
+# 確保上線的 image 和 QAS 驗收的是同一個（digest 相同）
+.promote-image:
+  extends: .harbor
+  stage: release
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - server/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+  variables:
+    SOURCE_ENV: qas
+  script:
+    - SRC=$REPO-$SOURCE_ENV:$SRC_ID
+    - docker pull $SRC || { echo "❌ $SOURCE_ENV 找不到這份程式碼的 image（$SRC_ID），請先 merge 到 $SOURCE_ENV 並等 build 完成"; exit 1; }
+    - BUILD_ID=$(docker inspect -f '{{index .Config.Labels "build-id"}}' $SRC) # 沿用 QAS build 時的編號
+    - IMAGE=$REPO-$DEPLOY_ENV
+    - docker tag $SRC $IMAGE:$BUILD_ID
+    - docker tag $SRC $IMAGE:$SRC_ID
+    - docker push $IMAGE:$BUILD_ID
+    - docker push $IMAGE:$SRC_ID
+    - echo "✅ 已將 $SOURCE_ENV 的 image 推廣到 Harbor：$IMAGE:$BUILD_ID"
+
+# 父類別：打 git tag（例如 v1.0.0）時，在 DEPLOY_ENV 的 image 加上版本號
+.tag-version:
+  extends: .harbor
+  stage: release
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+  script:
+    - SRC=$REPO-$DEPLOY_ENV:$SRC_ID
+    - docker pull $SRC || { echo "❌ $DEPLOY_ENV 找不到這份程式碼的 image（$SRC_ID），請在已上線的 $DEPLOY_BRANCH commit 上打 tag"; exit 1; }
+    - docker tag $SRC $REPO-$DEPLOY_ENV:$CI_COMMIT_TAG
+    - docker push $REPO-$DEPLOY_ENV:$CI_COMMIT_TAG
+    - echo "✅ 已加上版本號：$REPO-$DEPLOY_ENV:$CI_COMMIT_TAG"

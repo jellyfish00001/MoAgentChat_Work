@@ -1,8 +1,11 @@
-# QAS：push 到 qas 分支時觸發
+# QAS：開 MR 到 qas 或 merge 進 qas 時跑 lint；merge 後 build image
 .qas:
   variables:
     DEPLOY_ENV: qas
     DEPLOY_BRANCH: qas
+
+qas-lint:
+  extends: [.lint, .qas]
 
 qas-build-image:
   extends: [.build-image, .qas]

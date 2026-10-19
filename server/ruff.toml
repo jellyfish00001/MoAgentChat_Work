@@ -1,0 +1,7 @@
+# ruff 設定：CI 的 lint job 會用
+target-version = "py312"
+line-length = 100
+
+[lint]
+# E/W：PEP 8 風格、F：未使用的變數或 import 等錯誤、I：import 排序、B：常見 bug、UP：舊語法
+select = ["E", "W", "F", "I", "B", "UP"]
