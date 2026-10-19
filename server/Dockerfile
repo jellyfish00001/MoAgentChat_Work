@@ -1,13 +1,23 @@
 # Alpine 的系統套件比 Debian slim 少很多，Harbor 弱點掃描結果也乾淨很多
 FROM python:3.12-alpine
 
-# pip 改從公司 Nexus 下載套件（runner 不能連外網），設定與 Harbor base_image/python 相同
+# runner 不能連外網，apk 和 pip 都改從公司 Nexus 下載
+ARG NEXUS=https://nexusoss.wistron.com/repository
 # 用 ARG 只在 build 時生效，不會留在最後的 image 裡
-ARG PIP_INDEX_URL=https://nexusoss.wistron.com/repository/pypi-group/simple
-ARG PIP_TRUSTED_HOST=nexusoss.wistron.com
+ARG PIP_INDEX_URL=${NEXUS}/pypi-group/simple
+ARG PIP_CERT=/etc/ssl/certs/ca-certificates.crt
 
-# 套用最新的系統安全性更新
-RUN apk upgrade --no-cache
+# Nexus 的憑證是公司內部 CA 簽的，先把 Wistron 根憑證加進系統信任清單
+COPY certs/wistron-root-ca.crt /usr/local/share/ca-certificates/
+RUN cat /usr/local/share/ca-certificates/wistron-root-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+
+# apk 改用 Nexus 上對應 Alpine 版本的 mirror，再套用最新的系統安全性更新
+RUN ALPINE_VERSION=$(cut -d. -f1,2 /etc/alpine-release) \
+    && printf "%s\n" \
+        "${NEXUS}/apk-alpine${ALPINE_VERSION}-proxy/main" \
+        "${NEXUS}/apk-alpine${ALPINE_VERSION}-proxy/community" \
+        > /etc/apk/repositories \
+    && apk upgrade --no-cache
 
 WORKDIR /app
 
