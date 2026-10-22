@@ -2,6 +2,7 @@ include:
   # 公司 CI 範本（安全掃描用），之後開掃描時再打開
   # - remote: 'https://gitlab.wistron.com/wistronit/citemplate/-/raw/main/.gitlab-ci.common.yml'
   - pipeline/lib/lint.yaml
+  - pipeline/lib/test.yaml
   - pipeline/lib/build.yaml
   # - pipeline/lib/scan.yaml   # 檔案內容目前全是註解，GitLab 不允許 include 空檔案
   - pipeline/qas.yaml

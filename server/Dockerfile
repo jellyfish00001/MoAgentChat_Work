@@ -26,6 +26,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && pip uninstall -y pip
 
 COPY graph.py langgraph.json ./
+# 正式契約僅註冊 agent；flows 提供共用 LLM factory（config + llm）
+COPY flows ./flows
 
 # langgraph dev（in-memory）會把 thread/checkpoint 寫在 .langgraph_api/，要讓 USER 1000 可寫
 # k8s 開 readOnlyRootFilesystem 時，這個資料夾和 /tmp 都要掛 emptyDir

@@ -1,9 +1,15 @@
-__pycache__/
+﻿__pycache__/
 *.pyc
 .venv/
 .ruff_cache/
+.pytest_cache/
 .claude/
 # 金鑰只放本機 .env 或 Vault，不能進 image
 .env
 .env.*
 .langgraph_api/
+outputs/
+# 測試資料不進正式 image；flows 程式需進 image（graph.py 共用 llm factory）
+testdata/
+tests/
+langgraph.dev.json

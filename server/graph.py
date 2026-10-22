@@ -1,35 +1,20 @@
 import json
-import os
 from collections.abc import Sequence
 from typing import Annotated, Literal
 
-from azure.identity import ClientSecretCredential, get_bearer_token_provider
 from langchain_core.messages import BaseMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
-from langchain_openai import AzureChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.ui import AnyUIMessage, push_ui_message, ui_message_reducer
 from langgraph.types import interrupt
 from typing_extensions import TypedDict
 
-# LLM 連線設定：本機從 .env 讀（見 .env.example），k8s 由 Vault 注入環境變數
-REQUIRED_ENV = (
-    "AZ_TENANT_ID",
-    "AZ_CLIENT_ID",
-    "AZ_CLIENT_SECRET",
-    "AZ_SCOPE",
-    "AZ_LLM_ENDPOINT",
-    "AZ_LLM_VERSION",
-    "LLM_MODEL_NAME",
-    "OCP_APIM_SUBSCRIPTION_KEY",
-)
-settings = {key: os.getenv(key, "").strip() for key in REQUIRED_ENV}
-missing = [key for key, value in settings.items() if not value]
-if missing:
-    # 啟動時就失敗，比聊天時才出現「An internal error occurred」好查
-    raise RuntimeError("缺少環境變數（本機填 .env，k8s 放 Vault）：" + ", ".join(missing))
+from flows.llm.azure_apim import get_chat_model
+
+# 正式 demo agent：與業務 graphs 共用單一 LLM factory（flows.llm）
+llm = get_chat_model(temperature=0)
 
 
 class AgentState(TypedDict):
@@ -38,29 +23,6 @@ class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     ui: Annotated[Sequence[AnyUIMessage], ui_message_reducer]
     llm_calls: int
-
-
-# AAD Client Credentials 取 token，再帶 APIM 訂閱金鑰呼叫 LLM
-# （同 agent_by_jay/azure_api.py 驗證過的做法）
-credential = ClientSecretCredential(
-    tenant_id=settings["AZ_TENANT_ID"],
-    client_id=settings["AZ_CLIENT_ID"],
-    client_secret=settings["AZ_CLIENT_SECRET"],
-)
-llm = AzureChatOpenAI(
-    azure_endpoint=settings["AZ_LLM_ENDPOINT"],
-    api_key="fakekey",  # 實際用 AAD token 驗證，這個值不會被使用，但套件要求要有
-    azure_ad_token_provider=get_bearer_token_provider(credential, settings["AZ_SCOPE"]),
-    api_version=settings["AZ_LLM_VERSION"],
-    model=settings["LLM_MODEL_NAME"],
-    default_headers={"Ocp-Apim-Subscription-Key": settings["OCP_APIM_SUBSCRIPTION_KEY"]},
-    # 綁定 tools 時 langchain-openai 會自動改走 Responses API（/openai/responses），
-    # 公司 AI Gateway 沒有開這個路徑會回 404，所以固定用 chat/completions
-    use_responses_api=False,
-    temperature=0,
-    timeout=60,
-    max_retries=2,
-)
 
 
 # Define tools

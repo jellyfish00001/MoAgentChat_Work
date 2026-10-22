@@ -1,0 +1,13 @@
+# 父類別：domain pytest（不呼叫 LLM）
+# 子類別 extends 並設定 DEPLOY_BRANCH
+.pytest-domain:
+  stage: verify
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $DEPLOY_BRANCH
+  image: ${HARBOR_URL}/base_image/python:3.12-trixie
+  tags:
+    - k8s-runners
+  script:
+    - pip install --no-cache-dir --quiet -r server/requirements-dev.txt
+    - cd server && python -m pytest tests/domain -q

@@ -7,6 +7,9 @@
 qas-lint:
   extends: [.lint, .qas]
 
+qas-pytest-domain:
+  extends: [.pytest-domain, .qas]
+
 # 每個服務一個 build job：只有改到該服務的資料夾才 build
 # 改到 pipeline/ 或 .gitlab-ci.yml 時全部重新 build（CI 本身變了）
 # 新增服務：複製一個 job，改 SERVICE_NAME 和 changes 的資料夾
