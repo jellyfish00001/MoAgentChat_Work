@@ -7,8 +7,30 @@
 qas-lint:
   extends: [.lint, .qas]
 
-qas-build-image:
+# 每個服務一個 build job：只有改到該服務的資料夾才 build
+# 改到 pipeline/ 或 .gitlab-ci.yml 時全部重新 build（CI 本身變了）
+# 新增服務：複製一個 job，改 SERVICE_NAME 和 changes 的資料夾
+qas-build-server:
   extends: [.build-image, .qas]
+  variables:
+    SERVICE_NAME: server
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - server/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+qas-build-frontend:
+  extends: [.build-image, .qas]
+  variables:
+    SERVICE_NAME: frontend
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - frontend/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
 
 # qas-secret-scan:
 #   extends: [.secret-scan, .qas]
