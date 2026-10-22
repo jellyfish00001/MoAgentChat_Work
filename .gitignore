@@ -1,3 +1,7 @@
 .env
 __pycache__/
 .ruff_cache/
+.venv/
+# langgraph dev 本機執行時產生的對話紀錄
+.langgraph_api/
+.claude/*

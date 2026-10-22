@@ -1,3 +1,6 @@
-fastapi==0.142.2
-starlette==1.7.0
-uvicorn==0.54.0
+langgraph==1.2.16
+langgraph-cli[inmem]==0.4.37
+langgraph-api==0.16.2
+langgraph-runtime-inmem==0.36.2
+langchain-openai==1.7.2
+azure-identity==1.26.0

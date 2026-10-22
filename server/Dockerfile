@@ -25,14 +25,23 @@ COPY requirements.txt .
 # 裝完套件就移除 pip：執行時用不到，也避免 pip 本身的弱點被掃到
 RUN pip install --no-cache-dir -r requirements.txt && pip uninstall -y pip
 
-COPY main.py .
+COPY graph.py langgraph.json ./
 
-# build 編號（CI 傳入），/version 會回傳；label 讓 PRD 推廣時能沿用同一個編號
+# langgraph dev（in-memory）會把 thread/checkpoint 寫在 .langgraph_api/，要讓 USER 1000 可寫
+# k8s 開 readOnlyRootFilesystem 時，這個資料夾和 /tmp 都要掛 emptyDir
+RUN mkdir -p .langgraph_api && chown 1000:1000 .langgraph_api
+
+# build 編號（CI 傳入），label 讓 PRD 推廣時能沿用同一個編號
 ARG BUILD_ID=local
 ENV BUILD_ID=${BUILD_ID}
 LABEL build-id=${BUILD_ID}
 
+# USER 1000 沒有家目錄，cache 之類的寫到 /tmp；runner 不能連外網，關掉 CLI 的使用統計
+ENV HOME=/tmp \
+    LANGGRAPH_CLI_NO_ANALYTICS=1
+
 USER 1000
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# in-memory 模式：不需要 PostgreSQL/Redis，pod 重啟後對話紀錄會消失（QAS 試跑用）
+CMD ["langgraph", "dev", "--host", "0.0.0.0", "--port", "8000", "--no-browser", "--no-reload"]
