@@ -10,4 +10,8 @@ class RdRiskState(TypedDict, total=False):
     messages: Annotated[list[BaseMessage], add_messages]
     data_dir: str
     scan: dict[str, Any]
+    kpi: dict[str, Any]
+    narrative: dict[str, Any]
+    html: str
     output_path: str
+    output_html: str

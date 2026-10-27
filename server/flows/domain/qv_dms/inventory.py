@@ -1,4 +1,4 @@
-"""QV DMS input inventory — pure rules (MVP skeleton)."""
+"""QV DMS input inventory — pure rules (no LLM)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ REQUIRED_FILES = [
 ]
 
 OPTIONAL_OR_OFTEN_MISSING = [
-    "材料分析.xlsx",  # 當期：規格需要，示範包可能缺
+    "材料分析.xlsx",  # 當期：規格需要；缺則跳過 1.1（QV-02）
 ]
 
 
@@ -52,16 +52,14 @@ def inventory_qv_dms(data_dir: Path) -> QvInventory:
             missing_opt.append(name)
 
     steps = [
-        "1. 材料分析 → Pivot → 回填 Cover PCL500（需當期材料分析.xlsx）",
-        "2. 生產工單 → 报工差异／未分析",
-        "3. 會計調整關鍵字回填",
-        "4. 65011201 QV Reserve",
-        "5. 庫存調整 Reason Code",
-        "6. 格式 + Email/Teams",
-        "7. 樞紐儀表板 HTML",
-        "8. 當期／上期 Material Analysis（LLM 敘事）",
-        "9. 兩期 Pivot-Comprise",
-        "10. HTML 簡報 + 交互選單",
+        "1.1 材料分析 Pivot → Cover PCL500（需當期材料分析.xlsx）",
+        "1.2 生產工單 报工差异／未分析",
+        "1.3 會計調整關鍵字",
+        "1.4 65011201 Reserve",
+        "1.5 庫存調整 Reason Code",
+        "1.6 格式（保留數值）",
+        "1.7 Email/Teams 草稿（不實發）",
+        "2–5 期別分析／對比／HTML",
     ]
     return QvInventory(
         data_dir=str(data_dir),
