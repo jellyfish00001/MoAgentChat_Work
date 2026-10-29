@@ -1,11 +1,15 @@
 # 本機流程圖範本（非正式紀錄）
 
+> **邊界**：非正式示意／**非**正式 runbook／**非** coding 規範。  
+> Agent／技術約定 → [`.cursor/`](../../.cursor/MAP.md)；程式註解政策 → `.cursor/rules/aipark-docs-comments.mdc`。  
+> 業務待決（給 user）→ [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)；Agent／架構審查待決 → `.cursor/temp/open-decisions.md`（勿混寫進 OPEN-QUESTIONS）。
+
 與 Cursor Plan 相同：Markdown + Mermaid。**這是本機／測試用示意圖**，不是正式環境 runbook。
 
 預覽：開 `.md` → `Ctrl+Shift+V`（建議擴充 `bierner.markdown-mermaid`）。  
 每個 `01`／`02`／`03`：**上半**＝現行 Graph；**下半「原始客戶需求」**＝客戶 README 原樣附錄。附錄 ≠ 已 100% 實作。
 
-- **待決問題（請回覆）：** [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)  
+- **業務待決問題（請回覆）：** [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)  
 - **產出形態：** 規則／金額／Excel／HTML＝程式；LLM＝文案節點。
 
 ## 三流程總覽

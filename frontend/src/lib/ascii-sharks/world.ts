@@ -21,7 +21,14 @@ export const SHARK_NODES = 20;
 export type SharkKind = "classic" | "hammerhead" | "zebra" | "tiger" | "greathammer" | "mako" | "thresher" | "nurse";
 
 /** Which sharks to put in the water; size is relative to the biggest. */
-export type SharkSpec = { kind: SharkKind; size: number };
+export type SharkSpec = {
+  kind: SharkKind;
+  size: number;
+  /** Global length multiplier (0.5–2). */
+  sizeScale?: number;
+  /** Global cruise-speed multiplier (0.5–1.5). */
+  speedScale?: number;
+};
 
 // The landing hero: four of the same shark at different depths.
 const DEFAULT_SHARKS: SharkSpec[] = [
@@ -59,6 +66,8 @@ export interface Shark {
   nodes: Float32Array;
   heading: number;
   speed: number;
+  /** Multiplier on cruise / hunt target speed. */
+  speedScale: number;
   /** Tail-beat phase; drives the body wave in the renderer. */
   phase: number;
   /** Smoothed angular velocity (rad/s); the shark banks its fins into turns. */
@@ -84,6 +93,8 @@ const FISH_ALIGN_K = 1.4;
 const FISH_COHESION_K = 1;
 const FISH_FLEE_K = 1100;
 const BLIND_COS = -0.6; // ~127° either side of the heading is visible
+/** Base cruise px/s before size / UI speedScale (was 30; lowered so ×0.5–×1.5 sits slower). */
+const SHARK_BASE_CRUISE = 20;
 
 export class World {
   width = 0;
@@ -142,8 +153,8 @@ export class World {
 
     this.sharks = [];
     for (let i = 0; i < sharkCount; i++) {
-      const { kind, size } = this.sharkSpecs[i];
-      const length = baseLength * size;
+      const { kind, size, sizeScale = 1, speedScale = 1 } = this.sharkSpecs[i];
+      const length = baseLength * size * sizeScale;
       const orbitRadius = minSide * rand(0.28, 0.4);
       const a = (i / sharkCount) * TAU + rand(-0.4, 0.4);
       const orbitDir: 1 | -1 = i % 2 === 0 ? 1 : -1;
@@ -162,7 +173,8 @@ export class World {
         length,
         nodes,
         heading,
-        speed: 30,
+        speed: SHARK_BASE_CRUISE * speedScale,
+        speedScale,
         phase: rand(0, TAU),
         turn: 0,
         hunger: rand(0.25, 0.75),
@@ -171,6 +183,7 @@ export class World {
         orbitRadius,
         target: null,
         retargetAt: 0,
+        // Depth uses relative pack size only (ignore global sizeScale).
         depth: size,
       });
     }
@@ -555,7 +568,7 @@ export class World {
       sh.heading += turned;
       sh.turn += (turned / dt - sh.turn) * Math.min(1, dt * 3);
 
-      const cruise = 30 + L * 0.04;
+      const cruise = (SHARK_BASE_CRUISE + L * 0.04) * sh.speedScale;
       const targetSpeed = hunting ? cruise * (1.45 + closing * 1.5) : cruise;
       sh.speed += (targetSpeed - sh.speed) * Math.min(1, dt * 1.1);
       sh.phase += dt * (2 + sh.speed / 24);

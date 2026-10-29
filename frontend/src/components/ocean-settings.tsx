@@ -5,6 +5,12 @@ import { Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Switch } from "@/components/ui/switch";
 import { UI_THEMES, type UiTheme } from "@/lib/ui-theme";
+import {
+  MAX_SHARK_SIZE,
+  MAX_SHARK_SPEED,
+  MIN_SHARK_SIZE,
+  MIN_SHARK_SPEED,
+} from "@/hooks/use-ocean-settings";
 
 const MIN_SHARKS = 0;
 const MAX_SHARKS = 8;
@@ -12,21 +18,29 @@ const MAX_SHARKS = 8;
 interface OceanSettingsProps {
   enabled: boolean;
   sharkCount: number;
+  sharkSizeScale: number;
+  sharkSpeedScale: number;
   theme: UiTheme;
   onEnabledChange: (v: boolean) => void;
   onSharkCountChange: (v: number) => void;
+  onSharkSizeScaleChange: (v: number) => void;
+  onSharkSpeedScaleChange: (v: number) => void;
   onThemeChange: (v: UiTheme) => void;
 }
 
 /**
- * 背景設定：動畫開關、鯊魚數量、Theme 色塊 icon（Light / Dark）。
+ * 背景設定：動畫開關、鯊魚數量／大小／速度、Theme 色塊 icon（Light / Dark）。
  */
 export function OceanSettings({
   enabled,
   sharkCount,
+  sharkSizeScale,
+  sharkSpeedScale,
   theme,
   onEnabledChange,
   onSharkCountChange,
+  onSharkSizeScaleChange,
+  onSharkSpeedScaleChange,
   onThemeChange,
 }: OceanSettingsProps) {
   const [open, setOpen] = useState(false);
@@ -99,6 +113,44 @@ export function OceanSettings({
               value={sharkCount}
               disabled={!enabled}
               onChange={(e) => onSharkCountChange(Number(e.target.value))}
+              className="accent-accent w-full disabled:opacity-40"
+            />
+          </div>
+
+          <div className="mt-4">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">鯊魚大小</span>
+              <span className="text-muted-foreground text-sm tabular-nums">
+                ×{sharkSizeScale.toFixed(1)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={MIN_SHARK_SIZE}
+              max={MAX_SHARK_SIZE}
+              step={0.1}
+              value={sharkSizeScale}
+              disabled={!enabled}
+              onChange={(e) => onSharkSizeScaleChange(Number(e.target.value))}
+              className="accent-accent w-full disabled:opacity-40"
+            />
+          </div>
+
+          <div className="mt-4">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-muted-foreground text-sm">鯊魚速度</span>
+              <span className="text-muted-foreground text-sm tabular-nums">
+                ×{sharkSpeedScale.toFixed(1)}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={MIN_SHARK_SPEED}
+              max={MAX_SHARK_SPEED}
+              step={0.1}
+              value={sharkSpeedScale}
+              disabled={!enabled}
+              onChange={(e) => onSharkSpeedScaleChange(Number(e.target.value))}
               className="accent-accent w-full disabled:opacity-40"
             />
           </div>

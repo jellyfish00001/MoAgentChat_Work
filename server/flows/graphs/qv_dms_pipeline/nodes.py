@@ -21,6 +21,7 @@ from flows.domain.qv_dms.cover import (
 )
 from flows.domain.qv_dms.inventory import inventory_qv_dms
 from flows.graphs._observe import node_message
+from flows.graphs._paths import resolve_data_dir
 from flows.graphs.qv_dms_pipeline.prompts import SYSTEM
 from flows.graphs.qv_dms_pipeline.state import QvDmsState
 from flows.llm.azure_apim import get_chat_model
@@ -28,9 +29,7 @@ from flows.schemas.qv_dms import PipelineAdvice
 
 
 def _data_dir(state: QvDmsState) -> Path:
-    if state.get("data_dir"):
-        return Path(state["data_dir"])
-    return get_settings().qv_dms_data_dir()
+    return resolve_data_dir(state, get_settings().qv_dms_data_dir)
 
 
 def _working_cover_path() -> Path:
@@ -217,7 +216,7 @@ def narrate_status(state: QvDmsState) -> dict[str, Any]:
             ]
         )
         narrative = advice.model_dump()
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 — Cover/HTML already done by program steps
         narrative = {
             "can_start_cover": True,
             "blockers": [],

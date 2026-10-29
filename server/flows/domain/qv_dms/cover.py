@@ -1,4 +1,8 @@
-"""QV DMS Cover.xlsx backfill chain (steps 1.1–1.5). No LLM."""
+"""QV DMS Cover.xlsx backfill chain (steps 1.1–1.5). No LLM.
+
+Steps stay in one file so fill order and Cover column contracts stay obvious;
+extract per-step modules only after D2 in .cursor/temp/open-decisions.md.
+"""
 
 from __future__ import annotations
 

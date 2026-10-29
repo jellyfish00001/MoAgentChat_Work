@@ -46,8 +46,11 @@ export type AsciiPalette = {
   fish: [number, number, number];
 };
 
-function wistronGlyph(seed: number): string {
-  return WISTRON_GLYPHS[((seed >>> 0) % WISTRON_GLYPHS.length + WISTRON_GLYPHS.length) % WISTRON_GLYPHS.length];
+/** Map body-longitudinal coordinate s → letter index so neighbors spell "wistron". */
+function wistronIndexAlongBody(s: number): number {
+  const len = WISTRON_GLYPHS.length;
+  const step = Math.round(s * 52);
+  return ((step % len) + len) % len;
 }
 
 // Sparse glyphs on bright skin, dense glyphs in shadow, so the texture
@@ -328,6 +331,8 @@ export class AsciiRenderer {
   private sharkKey = new Uint32Array(0);
   private sharkDepth = new Float32Array(0);
   private sharkKind = new Uint8Array(0);
+  /** Body letter index 0..6 into WISTRON_GLYPHS (along-spine spelling). */
+  private sharkLetter = new Uint8Array(0);
   /** Cells darkened by a shark's shadow on the seabed. */
   private sharkShadow = new Uint8Array(0);
   private spine = new Float32Array(SHARK_NODES * 2);
@@ -454,6 +459,7 @@ export class AsciiRenderer {
       this.sharkKey = new Uint32Array(n);
       this.sharkDepth = new Float32Array(n);
       this.sharkKind = new Uint8Array(n);
+      this.sharkLetter = new Uint8Array(n);
       this.sharkShadow = new Uint8Array(n);
       this.fishStamp = new Uint32Array(n);
     }
@@ -724,7 +730,7 @@ export class AsciiRenderer {
    * Fully covered cells become solid skin; partial cells become edge glyphs.
    */
   private rasterizeSharks(sharks: Shark[], t: number) {
-    const { sharkFlag, sharkShade, sharkKey, sharkDepth, sharkKind, sharkShadow, spine, arc, cw, ch, cols, rows } = this;
+    const { sharkFlag, sharkShade, sharkKey, sharkDepth, sharkKind, sharkLetter, sharkShadow, spine, arc, cw, ch, cols, rows } = this;
     sharkFlag.fill(0);
     sharkShadow.fill(0);
 
@@ -807,11 +813,13 @@ export class AsciiRenderer {
           const coverage = hits / 5;
 
           const i = r * cols + c;
-          // Body-anchored key so each glyph rides along with the skin.
+          // Body-anchored key so shimmer rides with the skin.
           const key = (hash3(Math.round(s * 52), Math.round(v / (cw * 0.9)), sh.id) * 4294967295) >>> 0;
           sharkKey[i] = key;
           sharkDepth[i] = sh.depth;
           sharkKind[i] = kindIndex;
+          // Same s → same letter across the width; along s spells "wistron".
+          sharkLetter[i] = wistronIndexAlongBody(s);
 
           if (centerHit && coverage >= 0.6) {
             sharkFlag[i] = flag;
@@ -830,7 +838,7 @@ export class AsciiRenderer {
   }
 
   private drawSharks(t: number) {
-    const { ctx, cols, rows, cw, ch, sharkFlag, sharkShade, sharkKey, sharkDepth, sharkKind } = this;
+    const { ctx, cols, rows, cw, ch, sharkFlag, sharkShade, sharkKey, sharkDepth, sharkKind, sharkLetter } = this;
     const n = cols * rows;
     ctx.save();
     ctx.globalAlpha = this.sharkOpacity;
@@ -845,19 +853,20 @@ export class AsciiRenderer {
       const shade = sharkShade[i];
       const dim = 0.7 + 0.3 * sharkDepth[i];
       const [tr, tg, tb] = SHAPES[KINDS[sharkKind[i]]].tint;
+      const letter = WISTRON_GLYPHS[sharkLetter[i] % WISTRON_GLYPHS.length];
 
       // Colours re-roll on a staggered clock so the hide shimmers.
       const tick = Math.floor(t * 2.4 + (key % 997) / 97);
       const roll = hash3(key, tick, 7);
 
       if (flag === FLAG_EDGE) {
-        // Soft silhouette — lighter black-green ink.
+        // Soft silhouette — lighter black-green ink; still along-body spelling.
         const g = (95 + shade * 95) * dim;
         ctx.fillStyle =
           roll < 0.07
             ? this.accents[key % this.accents.length]
             : `rgb(${Math.round(g * tr)},${Math.round(g * tg)},${Math.min(255, Math.round(g * tb))})`;
-        ctx.fillText(wistronGlyph(key >>> 8), x + cw / 2, y + ch / 2 + 1);
+        ctx.fillText(letter, x + cw / 2, y + ch / 2 + 1);
         continue;
       }
 
@@ -868,17 +877,17 @@ export class AsciiRenderer {
         glyph = "o";
       } else if (flag === FLAG_RIDGE) {
         level = 210;
-        glyph = wistronGlyph(key >>> 8);
+        glyph = letter;
       } else if (flag === FLAG_MARK) {
         level = 36 + shade * 28;
-        glyph = wistronGlyph(key >>> 5);
+        glyph = letter;
       } else if (flag === FLAG_FIN) {
         level = 58 + shade * 125;
-        glyph = wistronGlyph(key >>> 3);
+        glyph = letter;
       } else {
-        // Body skin: dense wistron letters instead of :;t%SX8#@
+        // Body: consecutive cells along spine spell wistron… (shade only affects brightness).
         level = 68 + shade * 155;
-        glyph = wistronGlyph((key >>> 4) ^ Math.floor((1 - shade) * 17));
+        glyph = letter;
       }
       level *= dim;
       // Soft olive-grey fill (tint keeps a whisper of green); lifted a step.

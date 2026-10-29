@@ -46,12 +46,18 @@ import type { SharkSpec } from "@/lib/ascii-sharks";
 import { ContentBlocksPreview } from "./ContentBlocksPreview";
 import { Textarea } from "../ui/textarea";
 
-// [ai_prepare 修改] 依數量產生鯊魚陣容（classic，大小交錯，決定性不閃爍）
-function buildSharkRoster(count: number): SharkSpec[] {
+// [ai_prepare 修改] 依數量／體型／速度產生鯊魚陣容（classic，大小交錯，決定性不閃爍）
+function buildSharkRoster(
+  count: number,
+  sizeScale: number,
+  speedScale: number,
+): SharkSpec[] {
   const sizes = [1, 0.7, 0.84, 0.77, 0.62, 0.9, 0.55, 0.8];
   return Array.from({ length: count }, (_, i) => ({
     kind: "classic" as const,
     size: sizes[i % sizes.length],
+    sizeScale,
+    speedScale,
   }));
 }
 import {
@@ -157,10 +163,15 @@ export function Thread() {
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
   // [ai_prepare 修改] ASCII 海洋背景設定（開關／鯊魚數量／色系，存 localStorage）
   const ocean = useOceanSettings();
-  // 鯊魚陣容只在數量改變時重建（避免每次 render 新陣列導致 engine 重建）
+  // 鯊魚陣容只在數量／體型／速度改變時重建（避免每次 render 新陣列導致 engine 重建）
   const sharkRoster = useMemo(
-    () => buildSharkRoster(ocean.sharkCount),
-    [ocean.sharkCount],
+    () =>
+      buildSharkRoster(
+        ocean.sharkCount,
+        ocean.sharkSizeScale,
+        ocean.sharkSpeedScale,
+      ),
+    [ocean.sharkCount, ocean.sharkSizeScale, ocean.sharkSpeedScale],
   );
 
   const stream = useStreamContext();
@@ -205,7 +216,7 @@ export function Thread() {
     }
   }, [stream.error]);
 
-  // TODO: this should be part of the useStream hook
+  // [upstream TODO] first-token flag belongs in useStream — keep until vendor upgrade (open-decisions D3)
   const prevMessageLength = useRef(0);
   useEffect(() => {
     if (
@@ -389,9 +400,13 @@ export function Thread() {
               <OceanSettings
                 enabled={ocean.enabled}
                 sharkCount={ocean.sharkCount}
+                sharkSizeScale={ocean.sharkSizeScale}
+                sharkSpeedScale={ocean.sharkSpeedScale}
                 theme={ocean.theme}
                 onEnabledChange={ocean.setEnabled}
                 onSharkCountChange={ocean.setSharkCount}
+                onSharkSizeScaleChange={ocean.setSharkSizeScale}
+                onSharkSpeedScaleChange={ocean.setSharkSpeedScale}
                 onThemeChange={ocean.setTheme}
               />
               {chatStarted && (

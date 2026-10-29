@@ -1,4 +1,8 @@
-"""Rework&Dismantle risk scan — six anomaly types (no LLM)."""
+"""Rework&Dismantle risk scan — six anomaly types (no LLM).
+
+Kept as one module so KPI thresholds and anomaly detectors share loaders;
+split only if a step needs independent versioning (see .cursor/temp/open-decisions.md D2).
+"""
 
 from __future__ import annotations
 

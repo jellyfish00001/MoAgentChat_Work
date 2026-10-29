@@ -16,20 +16,20 @@ from flows.domain.rework_mo.analyze import (
     load_rework_mo_tables,
 )
 from flows.graphs._observe import node_message, preview_list
+from flows.graphs._paths import resolve_data_dir
 from flows.graphs.rework_mo_detective.prompts import SYSTEM_NARRATIVE, build_user_payload
 from flows.graphs.rework_mo_detective.state import DetectiveState
 from flows.llm.azure_apim import get_chat_model
 from flows.schemas.rework_mo import OrderSummary
 
 
-def resolve_data_dir(state: DetectiveState) -> Path:
-    if state.get("data_dir"):
-        return Path(state["data_dir"])
-    return get_settings().rework_mo_data_dir()
+def _data_dir(state: DetectiveState) -> Path:
+    return resolve_data_dir(state, get_settings().rework_mo_data_dir)
 
 
 def list_orders(state: DetectiveState) -> dict[str, Any]:
-    data_dir = resolve_data_dir(state)
+    data_dir = _data_dir(state)
+    # Reload per node: LangGraph may resume mid-graph; avoid assuming in-memory tables in state.
     tables = load_rework_mo_tables(data_dir)
     orders = list_unique_orders(tables.qv)
     lines = "\n".join(f"| {o} |" for o in orders) or "| （無） |"
@@ -49,7 +49,7 @@ def list_orders(state: DetectiveState) -> dict[str, Any]:
 
 
 def classify_case_node(state: DetectiveState) -> dict[str, Any]:
-    data_dir = resolve_data_dir(state)
+    data_dir = _data_dir(state)
     tables = load_rework_mo_tables(data_dir)
     orders = state.get("orders") or list_unique_orders(tables.qv)
     limit = get_settings().flows_analysis_limit
@@ -75,7 +75,7 @@ def classify_case_node(state: DetectiveState) -> dict[str, Any]:
 
 
 def run_checks_node(state: DetectiveState) -> dict[str, Any]:
-    data_dir = resolve_data_dir(state)
+    data_dir = _data_dir(state)
     tables = load_rework_mo_tables(data_dir)
     orders = state.get("orders") or list_unique_orders(tables.qv)
     limit = get_settings().flows_analysis_limit
@@ -147,7 +147,7 @@ def narrate_with_llm(state: DetectiveState) -> dict[str, Any]:
                     HumanMessage(content=build_user_payload(item)),
                 ]
             )
-            # Program owns Reason — ignore LLM rewrite
+            # Reason codes are program-owned; keep LLM for narrative/confidence only.
             merged = {
                 **item,
                 "llm": {
@@ -166,7 +166,7 @@ def narrate_with_llm(state: DetectiveState) -> dict[str, Any]:
                 f"- Reason（程式）：{locked_reason}\n"
                 f"- 改善：{summary.reason_draft.improvement}"
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001 — degrade: pipeline still persists program Reasons
             enriched.append({**item, "llm_error": f"{type(exc).__name__}: {exc}"})
             narratives.append(
                 f"### 工單 {item.get('order_number')}\n"
@@ -189,7 +189,7 @@ def persist(state: DetectiveState) -> dict[str, Any]:
     out_dir = get_settings().outputs_dir()
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    data_dir = resolve_data_dir(state)
+    data_dir = _data_dir(state)
     tables = load_rework_mo_tables(data_dir)
     qv_out = apply_reasons_to_qv(tables.qv, analyses)
     xlsx_path = out_dir / "rework_mo_QV_Report-Material_reasons.xlsx"

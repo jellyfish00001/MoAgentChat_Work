@@ -10,6 +10,7 @@ from flows.config.settings import get_settings
 from flows.domain.rd_risk.html_report import render_rd_dashboard
 from flows.domain.rd_risk.scan import load_rd_tables, scan_rd_risks
 from flows.graphs._observe import node_message
+from flows.graphs._paths import resolve_data_dir
 from flows.graphs.rd_risk_dashboard.prompts import SYSTEM
 from flows.graphs.rd_risk_dashboard.state import RdRiskState
 from flows.llm.azure_apim import get_chat_model
@@ -17,13 +18,12 @@ from flows.schemas.rd_risk import DashboardBrief
 
 
 def _data_dir(state: RdRiskState) -> Path:
-    if state.get("data_dir"):
-        return Path(state["data_dir"])
-    return get_settings().rd_risk_data_dir()
+    return resolve_data_dir(state, get_settings().rd_risk_data_dir)
 
 
 def load_data(state: RdRiskState) -> dict[str, Any]:
     data_dir = _data_dir(state)
+    # Stats only here; scan_all reloads tables (no DataFrame in graph state).
     tables = load_rd_tables(data_dir)
     msg = node_message(
         node="load_data",
@@ -41,6 +41,7 @@ def load_data(state: RdRiskState) -> dict[str, Any]:
 
 def scan_all(state: RdRiskState) -> dict[str, Any]:
     settings = get_settings()
+    # Fresh load: checkpoint resume must not depend on prior node memory.
     tables = load_rd_tables(_data_dir(state))
     result = scan_rd_risks(tables, sample_limit=settings.flows_rd_sample_limit)
     payload = result.to_dict()
@@ -87,7 +88,7 @@ def narrate_dashboard(state: RdRiskState) -> dict[str, Any]:
         narrative = brief.model_dump()
         scan = {**scan, "llm": narrative}
         note = narrative.get("headline", "")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 — HTML/JSON still use rule scan without LLM
         note = f"LLM 摘要失敗：{type(exc).__name__}: {exc}"
         narrative = {"headline": "規則掃描結果（無 LLM）", "risks": scan.get("notes") or [], "actions": []}
     msg = node_message(
