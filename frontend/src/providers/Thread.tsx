@@ -43,7 +43,10 @@ export function ThreadProvider({ children }: { children: ReactNode }) {
   const [apiUrl] = useQueryState("apiUrl", {
     defaultValue: envApiUrl || "",
   });
-  const [assistantId] = useQueryState("assistantId");
+  // [ai_prepare 修改] 與 Stream／GraphSwitcher 共用同一套 default，避免 assistantId 不同步
+  const [assistantId] = useQueryState("assistantId", {
+    defaultValue: envAssistantId || "",
+  });
   const [authScheme] = useQueryState("authScheme", {
     defaultValue: envAuthScheme || "",
   });

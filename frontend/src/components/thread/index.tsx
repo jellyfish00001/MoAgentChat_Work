@@ -26,6 +26,8 @@ import {
 import { useQueryState, parseAsBoolean } from "nuqs";
 import { StickToBottom, useStickToBottomContext } from "use-stick-to-bottom";
 import ThreadHistory from "./history";
+import { CurrentGraphBadge } from "./graph-switcher";
+import { FinanceAccessToggle } from "./finance-access-toggle";
 import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Label } from "../ui/label";
@@ -69,8 +71,8 @@ function StickyToBottomContent(props: {
   return (
     <div
       ref={context.scrollRef}
-      style={{ width: "100%", height: "100%" }}
-      className={props.className}
+      style={{ width: "100%" }}
+      className={cn("h-full", props.className)}
     >
       <div
         ref={context.contentRef}
@@ -129,6 +131,9 @@ export function Thread() {
   const [artifactOpen, closeArtifact] = useArtifactOpen();
 
   const [threadId, _setThreadId] = useQueryState("threadId");
+  const [assistantId] = useQueryState("assistantId", {
+    defaultValue: process.env.NEXT_PUBLIC_ASSISTANT_ID || "",
+  });
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
     parseAsBoolean.withDefault(false),
@@ -234,12 +239,17 @@ export function Thread() {
     const context =
       Object.keys(artifactContext).length > 0 ? artifactContext : undefined;
 
+    // [ai_prepare 修改] 建立 thread 時寫入 graph_id，歷史才能依 Graph 過濾
+    const graphId =
+      assistantId || process.env.NEXT_PUBLIC_ASSISTANT_ID || "agent";
+
     stream.submit(
       { messages: [...toolMessages, newHumanMessage], context },
       {
         streamMode: ["values"],
         streamSubgraphs: true,
         streamResumable: true,
+        metadata: { graph_id: graphId },
         optimisticValues: (prev) => ({
           ...prev,
           context,
@@ -340,8 +350,9 @@ export function Thread() {
               <div className="from-background/90 via-background/30 absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent" />
             </div>
           )}
-          <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
-            <div className="relative flex items-center justify-start gap-2">
+          {/* Sticky top bar — frosted so scrolled messages don't collide with logo */}
+          <div className="border-border/40 bg-background/75 absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 border-b p-2 pl-4 backdrop-blur-md">
+            <div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">
               {(!chatHistoryOpen || !isLargeScreen) && (
                 <Button
                   variant="ghost"
@@ -357,7 +368,7 @@ export function Thread() {
               {chatStarted && (
                 <>
                   <motion.button
-                    className="flex cursor-pointer items-center gap-2"
+                    className="flex shrink-0 cursor-pointer items-center gap-2"
                     onClick={() => setThreadId(null)}
                     type="button"
                   >
@@ -366,11 +377,15 @@ export function Thread() {
                       W.AgentChat
                     </span>
                   </motion.button>
+                  {/* [ai_prepare 修改] 標示目前所屬 LangGraph */}
+                  <CurrentGraphBadge />
                   <ConnectedHost apiUrl={stream.apiUrl} />
                 </>
               )}
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex shrink-0 items-center gap-1">
+              {/* [ai_prepare 修改] 本機模擬：一般／財務權限 */}
+              <FinanceAccessToggle />
               <OceanSettings
                 enabled={ocean.enabled}
                 sharkCount={ocean.sharkCount}
@@ -393,14 +408,16 @@ export function Thread() {
             </div>
           </div>
 
-          <StickToBottom className="relative z-[1] flex-1 overflow-hidden pt-14">
+          {/* inset-0 + pt-16: clear frosted header without breaking sticky input (avoid top+height:100%) */}
+          <StickToBottom className="relative z-[1] min-h-0 flex-1 overflow-hidden">
             <StickyToBottomContent
               className={cn(
                 "scrollbar-ocean absolute inset-0 overflow-y-scroll px-4",
+                chatStarted && "pt-16",
                 !chatStarted && "mt-[20vh] flex flex-col items-stretch",
                 chatStarted && "grid grid-rows-[1fr_auto]",
               )}
-              contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full relative z-[1]"
+              contentClassName="pt-4 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full relative z-[1]"
               content={
                 <>
                   {messages
@@ -439,11 +456,15 @@ export function Thread() {
               footer={
                 <div className="sticky bottom-0 z-[1] flex flex-col items-center gap-8 bg-transparent">
                   {!chatStarted && (
-                    <div className="border-border bg-panel/75 text-panel-foreground flex items-center gap-3 rounded-full border px-5 py-2 shadow-sm backdrop-blur-md">
-                      <LangGraphLogoSVG className="text-foreground h-8 w-8 flex-shrink-0" />
-                      <h1 className="text-2xl font-semibold tracking-tight">
-                        W.AgentChat
-                      </h1>
+                    <div className="border-border bg-panel/75 text-panel-foreground flex flex-col items-center gap-2 rounded-3xl border px-5 py-3 shadow-sm backdrop-blur-md">
+                      <div className="flex items-center gap-3">
+                        <LangGraphLogoSVG className="text-foreground h-8 w-8 flex-shrink-0" />
+                        <h1 className="text-2xl font-semibold tracking-tight">
+                          W.AgentChat
+                        </h1>
+                      </div>
+                      {/* [ai_prepare 修改] 空對話也顯示目前 Graph */}
+                      <CurrentGraphBadge />
                     </div>
                   )}
 

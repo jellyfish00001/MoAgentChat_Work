@@ -5,6 +5,7 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { useStream } from "@langchain/langgraph-sdk/react";
 import { type Message } from "@langchain/langgraph-sdk";
@@ -122,6 +123,20 @@ const StreamSession = ({
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
+
+  // [ai_prepare 修改] 換 Agent 時清對話，但不 remount 整棵樹（避免閃爍）
+  const prevAssistantId = useRef(assistantId);
+  useEffect(() => {
+    if (prevAssistantId.current === assistantId) return;
+    prevAssistantId.current = assistantId;
+    setInitialValues(undefined);
+    if (threadId) {
+      void setThreadId(null);
+    } else {
+      streamValue.switchThread(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在 assistantId 變更時清一次
+  }, [assistantId]);
 
   useEffect(() => {
     if (!threadId) return;

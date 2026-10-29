@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useThreads } from "@/providers/Thread";
+import { useStreamContext } from "@/providers/Stream";
 import { Thread } from "@langchain/langgraph-sdk";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { GraphSwitcher } from "../graph-switcher";
+import { Separator } from "@/components/ui/separator";
 
 function ThreadList({
   threads,
@@ -23,7 +26,9 @@ function ThreadList({
   threads: Thread[];
   onThreadClick?: (threadId: string) => void;
 }) {
-  const [threadId, setThreadId] = useQueryState("threadId");
+  const [threadId] = useQueryState("threadId");
+  // [ai_prepare 修改] 用 SDK switchThread 清掉舊 stream，再載入選中對話
+  const stream = useStreamContext();
 
   return (
     <div className="scrollbar-ocean flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll">
@@ -57,7 +62,7 @@ function ThreadList({
                 e.preventDefault();
                 onThreadClick?.(t.thread_id);
                 if (t.thread_id === threadId) return;
-                setThreadId(t.thread_id);
+                stream.switchThread(t.thread_id);
               }}
             >
               <p className="truncate text-ellipsis">{itemText}</p>
@@ -97,18 +102,30 @@ export default function ThreadHistory() {
     setMounted(true);
   }, []);
 
+  // [ai_prepare 修改] 軟換列表：不先清空、不打 skeleton，避免切 Agent 閃爍
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setThreadsLoading(true);
+    let cancelled = false;
+    const showSkeleton = threads.length === 0;
+    if (showSkeleton) setThreadsLoading(true);
     getThreads()
-      .then(setThreads)
+      .then((next) => {
+        if (!cancelled) setThreads(next);
+      })
       .catch(console.error)
-      .finally(() => setThreadsLoading(false));
-  }, []);
+      .finally(() => {
+        if (!cancelled) setThreadsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // threads.length 只用於「是否首次」判斷，刻意不列入 deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getThreads, setThreads, setThreadsLoading]);
 
   return (
     <>
-      <div className="border-sidebar-border bg-sidebar shadow-inner-right hidden h-screen w-[300px] shrink-0 flex-col items-start justify-start gap-6 border-r lg:flex">
+      <div className="border-sidebar-border bg-sidebar shadow-inner-right hidden h-screen w-[300px] shrink-0 flex-col items-start justify-start gap-4 border-r lg:flex">
         <div className="flex w-full items-center justify-between px-4 pt-1.5">
           <Button
             variant="ghost"
@@ -123,6 +140,11 @@ export default function ThreadHistory() {
           <h1 className="font-mono text-xl font-semibold tracking-tight">
             Thread History
           </h1>
+        </div>
+        <GraphSwitcher compact />
+        <Separator className="bg-sidebar-border mx-3 w-auto" />
+        <div className="text-muted-foreground w-full px-4 text-xs font-medium tracking-wide uppercase">
+          Threads
         </div>
         {threadsLoading ? (
           <ThreadHistoryLoading />
@@ -141,11 +163,13 @@ export default function ThreadHistory() {
           >
             <SheetContent
               side="left"
-              className="flex lg:hidden"
+              className="flex flex-col gap-4 lg:hidden"
             >
               <SheetHeader>
                 <SheetTitle>Thread History</SheetTitle>
               </SheetHeader>
+              <GraphSwitcher />
+              <Separator />
               <ThreadList
                 threads={threads}
                 onThreadClick={() => setChatHistoryOpen(false)}
