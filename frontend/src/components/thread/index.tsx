@@ -3,7 +3,7 @@ import { ReactNode, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useStreamContext } from "@/providers/Stream";
-import { useState, FormEvent } from "react";
+import { useMemo, useState, FormEvent } from "react";
 import { Button } from "../ui/button";
 import { Checkpoint, Message } from "@langchain/langgraph-sdk";
 import { AssistantMessage, AssistantMessageLoading } from "./messages/ai";
@@ -30,7 +30,6 @@ import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
-import { GitHubSVG } from "../icons/github";
 import {
   Tooltip,
   TooltipContent,
@@ -38,7 +37,21 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { useFileUpload } from "@/hooks/use-file-upload";
+import { useOceanSettings } from "@/hooks/use-ocean-settings";
+import { AsciiOcean } from "@/components/ascii-ocean";
+import { OceanSettings } from "@/components/ocean-settings";
+import type { SharkSpec } from "@/lib/ascii-sharks";
 import { ContentBlocksPreview } from "./ContentBlocksPreview";
+import { Textarea } from "../ui/textarea";
+
+// [ai_prepare 修改] 依數量產生鯊魚陣容（classic，大小交錯，決定性不閃爍）
+function buildSharkRoster(count: number): SharkSpec[] {
+  const sizes = [1, 0.7, 0.84, 0.77, 0.62, 0.9, 0.55, 0.8];
+  return Array.from({ length: count }, (_, i) => ({
+    kind: "classic" as const,
+    size: sizes[i % sizes.length],
+  }));
+}
 import {
   useArtifactOpen,
   ArtifactContent,
@@ -84,30 +97,6 @@ function ScrollToBottom(props: { className?: string }) {
       <ArrowDown className="h-4 w-4" />
       <span>Scroll to bottom</span>
     </Button>
-  );
-}
-
-function OpenGitHubRepo() {
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <a
-            href="https://github.com/langchain-ai/agent-chat-ui"
-            target="_blank"
-            className="flex items-center justify-center"
-          >
-            <GitHubSVG
-              width="24"
-              height="24"
-            />
-          </a>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <p>Open GitHub repo</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }
 
@@ -161,6 +150,13 @@ export function Thread() {
   } = useFileUpload();
   const [firstTokenReceived, setFirstTokenReceived] = useState(false);
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  // [ai_prepare 修改] ASCII 海洋背景設定（開關／鯊魚數量／色系，存 localStorage）
+  const ocean = useOceanSettings();
+  // 鯊魚陣容只在數量改變時重建（避免每次 render 新陣列導致 engine 重建）
+  const sharkRoster = useMemo(
+    () => buildSharkRoster(ocean.sharkCount),
+    [ocean.sharkCount],
+  );
 
   const stream = useStreamContext();
   const messages = stream.messages;
@@ -283,7 +279,7 @@ export function Thread() {
     <div className="flex h-screen w-full overflow-hidden">
       <div className="relative hidden lg:flex">
         <motion.div
-          className="absolute z-20 h-full overflow-hidden border-r bg-white"
+          className="border-sidebar-border bg-sidebar absolute z-20 h-full overflow-hidden border-r"
           style={{ width: 300 }}
           animate={
             isLargeScreen
@@ -332,73 +328,58 @@ export function Thread() {
               : { duration: 0 }
           }
         >
-          {!chatStarted && (
-            <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
-              <div>
-                {(!chatHistoryOpen || !isLargeScreen) && (
-                  <Button
-                    className="hover:bg-gray-100"
-                    variant="ghost"
-                    onClick={() => setChatHistoryOpen((p) => !p)}
-                  >
-                    {chatHistoryOpen ? (
-                      <PanelRightOpen className="size-5" />
-                    ) : (
-                      <PanelRightClose className="size-5" />
-                    )}
-                  </Button>
-                )}
-              </div>
-              <div className="absolute top-2 right-4 flex items-center">
-                <OpenGitHubRepo />
-              </div>
+          {/* ASCII 海洋全程保留；對話中略降透明度以保訊息可讀 */}
+          {ocean.enabled && (
+            <div
+              className={cn(
+                "pointer-events-none absolute inset-0 z-0 overflow-hidden",
+                chatStarted && "opacity-40",
+              )}
+            >
+              <AsciiOcean sharks={sharkRoster} />
+              <div className="from-background/90 via-background/30 absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent" />
             </div>
           )}
-          {chatStarted && (
-            <div className="relative z-10 flex items-center justify-between gap-3 p-2">
-              <div className="relative flex items-center justify-start gap-2">
-                <div className="absolute left-0 z-10">
-                  {(!chatHistoryOpen || !isLargeScreen) && (
-                    <Button
-                      className="hover:bg-gray-100"
-                      variant="ghost"
-                      onClick={() => setChatHistoryOpen((p) => !p)}
-                    >
-                      {chatHistoryOpen ? (
-                        <PanelRightOpen className="size-5" />
-                      ) : (
-                        <PanelRightClose className="size-5" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-                <motion.button
-                  className="flex cursor-pointer items-center gap-2"
-                  onClick={() => setThreadId(null)}
-                  animate={{
-                    marginLeft: !chatHistoryOpen ? 48 : 0,
-                  }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
+          <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 p-2 pl-4">
+            <div className="relative flex items-center justify-start gap-2">
+              {(!chatHistoryOpen || !isLargeScreen) && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setChatHistoryOpen((p) => !p)}
                 >
-                  <LangGraphLogoSVG
-                    width={32}
-                    height={32}
-                  />
-                  <span className="text-xl font-semibold tracking-tight">
-                    Agent Chat
-                  </span>
-                </motion.button>
-                <ConnectedHost apiUrl={stream.apiUrl} />
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="flex items-center">
-                  <OpenGitHubRepo />
-                </div>
+                  {chatHistoryOpen ? (
+                    <PanelRightOpen className="size-5" />
+                  ) : (
+                    <PanelRightClose className="size-5" />
+                  )}
+                </Button>
+              )}
+              {chatStarted && (
+                <>
+                  <motion.button
+                    className="flex cursor-pointer items-center gap-2"
+                    onClick={() => setThreadId(null)}
+                    type="button"
+                  >
+                    <LangGraphLogoSVG className="text-foreground h-8 w-8" />
+                    <span className="text-xl font-semibold tracking-tight">
+                      W.AgentChat
+                    </span>
+                  </motion.button>
+                  <ConnectedHost apiUrl={stream.apiUrl} />
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <OceanSettings
+                enabled={ocean.enabled}
+                sharkCount={ocean.sharkCount}
+                theme={ocean.theme}
+                onEnabledChange={ocean.setEnabled}
+                onSharkCountChange={ocean.setSharkCount}
+                onThemeChange={ocean.setTheme}
+              />
+              {chatStarted && (
                 <TooltipIconButton
                   size="lg"
                   className="p-4"
@@ -408,20 +389,18 @@ export function Thread() {
                 >
                   <SquarePen className="size-5" />
                 </TooltipIconButton>
-              </div>
-
-              <div className="from-background to-background/0 absolute inset-x-0 top-full h-5 bg-gradient-to-b" />
+              )}
             </div>
-          )}
+          </div>
 
-          <StickToBottom className="relative flex-1 overflow-hidden">
+          <StickToBottom className="relative z-[1] flex-1 overflow-hidden pt-14">
             <StickyToBottomContent
               className={cn(
-                "absolute inset-0 overflow-y-scroll px-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent",
-                !chatStarted && "mt-[25vh] flex flex-col items-stretch",
+                "scrollbar-ocean absolute inset-0 overflow-y-scroll px-4",
+                !chatStarted && "mt-[20vh] flex flex-col items-stretch",
                 chatStarted && "grid grid-rows-[1fr_auto]",
               )}
-              contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full"
+              contentClassName="pt-8 pb-16 max-w-3xl mx-auto flex flex-col gap-4 w-full relative z-[1]"
               content={
                 <>
                   {messages
@@ -458,12 +437,12 @@ export function Thread() {
                 </>
               }
               footer={
-                <div className="sticky bottom-0 flex flex-col items-center gap-8 bg-white">
+                <div className="sticky bottom-0 z-[1] flex flex-col items-center gap-8 bg-transparent">
                   {!chatStarted && (
-                    <div className="flex items-center gap-3">
-                      <LangGraphLogoSVG className="h-8 flex-shrink-0" />
+                    <div className="border-border bg-panel/75 text-panel-foreground flex items-center gap-3 rounded-full border px-5 py-2 shadow-sm backdrop-blur-md">
+                      <LangGraphLogoSVG className="text-foreground h-8 w-8 flex-shrink-0" />
                       <h1 className="text-2xl font-semibold tracking-tight">
-                        Agent Chat
+                        W.AgentChat
                       </h1>
                     </div>
                   )}
@@ -473,10 +452,8 @@ export function Thread() {
                   <div
                     ref={dropRef}
                     className={cn(
-                      "bg-muted relative z-10 mx-auto mb-8 w-full max-w-3xl rounded-2xl shadow-xs transition-all",
-                      dragOver
-                        ? "border-primary border-2 border-dotted"
-                        : "border border-solid",
+                      "border-border bg-panel/75 relative z-10 mx-auto mb-8 w-full max-w-3xl rounded-3xl border shadow-sm backdrop-blur-md transition-all",
+                      dragOver && "border-accent border-2 border-dotted",
                     )}
                   >
                     <form
@@ -487,7 +464,7 @@ export function Thread() {
                         blocks={contentBlocks}
                         onRemove={removeBlock}
                       />
-                      <textarea
+                      <Textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onPaste={handlePaste}
@@ -505,7 +482,7 @@ export function Thread() {
                           }
                         }}
                         placeholder="Type your message..."
-                        className="field-sizing-content resize-none border-none bg-transparent p-3.5 pb-0 shadow-none ring-0 outline-none focus:ring-0 focus:outline-none"
+                        className="field-sizing-content min-h-0 resize-none rounded-2xl border-none bg-transparent p-3.5 pb-0 shadow-none focus-visible:ring-0"
                       />
 
                       <div className="flex items-center gap-6 p-2 pt-4">
@@ -518,7 +495,7 @@ export function Thread() {
                             />
                             <Label
                               htmlFor="render-tool-calls"
-                              className="text-sm text-gray-600"
+                              className="text-muted-foreground text-sm"
                             >
                               Hide Tool Calls
                             </Label>
@@ -526,12 +503,10 @@ export function Thread() {
                         </div>
                         <Label
                           htmlFor="file-input"
-                          className="flex cursor-pointer items-center gap-2"
+                          className="text-muted-foreground flex cursor-pointer items-center gap-2"
                         >
-                          <Plus className="size-5 text-gray-600" />
-                          <span className="text-sm text-gray-600">
-                            Upload PDF or Image
-                          </span>
+                          <Plus className="size-5" />
+                          <span className="text-sm">Upload PDF or Image</span>
                         </Label>
                         <input
                           id="file-input"
@@ -544,6 +519,7 @@ export function Thread() {
                         {stream.isLoading ? (
                           <Button
                             key="stop"
+                            variant="outline"
                             onClick={() => stream.stop()}
                             className="ml-auto"
                           >
@@ -553,7 +529,8 @@ export function Thread() {
                         ) : (
                           <Button
                             type="submit"
-                            className="ml-auto shadow-md transition-all"
+                            variant="accent"
+                            className="ml-auto"
                             disabled={
                               isLoading ||
                               (!input.trim() && contentBlocks.length === 0)

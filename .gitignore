@@ -30,3 +30,4 @@ frontend/CLAUDE.md
 *.log
 .DS_Store
 Thumbs.db
+*.bat

@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useThreads } from "@/providers/Thread";
 import { Thread } from "@langchain/langgraph-sdk";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
 import { getContentString } from "../utils";
 import { useQueryState, parseAsBoolean } from "nuqs";
@@ -25,7 +26,7 @@ function ThreadList({
   const [threadId, setThreadId] = useQueryState("threadId");
 
   return (
-    <div className="flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent">
+    <div className="scrollbar-ocean flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll">
       {threads.map((t) => {
         let itemText = t.thread_id;
         if (
@@ -38,6 +39,7 @@ function ThreadList({
           const firstMessage = t.values.messages[0];
           itemText = getContentString(firstMessage.content);
         }
+        const selected = t.thread_id === threadId;
         return (
           <div
             key={t.thread_id}
@@ -45,7 +47,12 @@ function ThreadList({
           >
             <Button
               variant="ghost"
-              className="w-[280px] items-start justify-start text-left font-normal"
+              className={cn(
+                "w-[280px] items-start justify-start rounded-xl border-l-2 text-left font-normal",
+                selected
+                  ? "border-accent bg-muted text-foreground"
+                  : "border-transparent",
+              )}
               onClick={(e) => {
                 e.preventDefault();
                 onThreadClick?.(t.thread_id);
@@ -64,7 +71,7 @@ function ThreadList({
 
 function ThreadHistoryLoading() {
   return (
-    <div className="flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-transparent">
+    <div className="scrollbar-ocean flex h-full w-full flex-col items-start justify-start gap-2 overflow-y-scroll">
       {Array.from({ length: 30 }).map((_, i) => (
         <Skeleton
           key={`skeleton-${i}`}
@@ -77,6 +84,7 @@ function ThreadHistoryLoading() {
 
 export default function ThreadHistory() {
   const isLargeScreen = useMediaQuery("(min-width: 1024px)");
+  const [mounted, setMounted] = useState(false);
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
     parseAsBoolean.withDefault(false),
@@ -84,6 +92,10 @@ export default function ThreadHistory() {
 
   const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =
     useThreads();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -96,10 +108,9 @@ export default function ThreadHistory() {
 
   return (
     <>
-      <div className="shadow-inner-right hidden h-screen w-[300px] shrink-0 flex-col items-start justify-start gap-6 border-r-[1px] border-slate-300 lg:flex">
+      <div className="border-sidebar-border bg-sidebar shadow-inner-right hidden h-screen w-[300px] shrink-0 flex-col items-start justify-start gap-6 border-r lg:flex">
         <div className="flex w-full items-center justify-between px-4 pt-1.5">
           <Button
-            className="hover:bg-gray-100"
             variant="ghost"
             onClick={() => setChatHistoryOpen((p) => !p)}
           >
@@ -109,7 +120,7 @@ export default function ThreadHistory() {
               <PanelRightClose className="size-5" />
             )}
           </Button>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="font-mono text-xl font-semibold tracking-tight">
             Thread History
           </h1>
         </div>
@@ -119,28 +130,30 @@ export default function ThreadHistory() {
           <ThreadList threads={threads} />
         )}
       </div>
-      <div className="lg:hidden">
-        <Sheet
-          open={!!chatHistoryOpen && !isLargeScreen}
-          onOpenChange={(open) => {
-            if (isLargeScreen) return;
-            setChatHistoryOpen(open);
-          }}
-        >
-          <SheetContent
-            side="left"
-            className="flex lg:hidden"
+      {mounted && (
+        <div className="lg:hidden">
+          <Sheet
+            open={!!chatHistoryOpen && !isLargeScreen}
+            onOpenChange={(open) => {
+              if (isLargeScreen) return;
+              setChatHistoryOpen(open);
+            }}
           >
-            <SheetHeader>
-              <SheetTitle>Thread History</SheetTitle>
-            </SheetHeader>
-            <ThreadList
-              threads={threads}
-              onThreadClick={() => setChatHistoryOpen((o) => !o)}
-            />
-          </SheetContent>
-        </Sheet>
-      </div>
+            <SheetContent
+              side="left"
+              className="flex lg:hidden"
+            >
+              <SheetHeader>
+                <SheetTitle>Thread History</SheetTitle>
+              </SheetHeader>
+              <ThreadList
+                threads={threads}
+                onThreadClick={() => setChatHistoryOpen(false)}
+              />
+            </SheetContent>
+          </Sheet>
+        </div>
+      )}
     </>
   );
 }

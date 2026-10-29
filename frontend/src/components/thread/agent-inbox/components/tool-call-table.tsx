@@ -3,12 +3,12 @@ import { unknownToPrettyDate } from "../utils";
 
 export function ToolCallTable({ toolCall }: { toolCall: ToolCall }) {
   return (
-    <div className="max-w-full min-w-[300px] overflow-hidden rounded-lg border">
+    <div className="max-w-full min-w-[300px] overflow-hidden rounded-sm border">
       <table className="w-full border-collapse">
         <thead>
           <tr>
             <th
-              className="bg-gray-100 px-2 py-0 text-left text-sm"
+              className="bg-muted px-2 py-0 text-left text-sm"
               colSpan={2}
             >
               {toolCall.name}

@@ -26,6 +26,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { getApiKey, setApiKey as storeApiKey } from "@/lib/api-key";
 import { resolveApiUrl } from "@/lib/resolve-api-url";
 import { useThreads } from "./Thread";
+import { createClient } from "./client";
 import { toast } from "sonner";
 
 export type StateType = { messages: Message[]; ui?: UIMessage[] };
@@ -87,6 +88,13 @@ const StreamSession = ({
 }) => {
   const [threadId, setThreadId] = useQueryState("threadId");
   const { getThreads, setThreads } = useThreads();
+  /** When checkpoint history is empty, hydrate from thread.values (search still has them). */
+  const [initialValues, setInitialValues] = useState<StateType | undefined>();
+
+  useEffect(() => {
+    setInitialValues(undefined);
+  }, [threadId]);
+
   const streamValue = useTypedStream({
     apiUrl,
     apiKey: apiKey ?? undefined,
@@ -98,6 +106,7 @@ const StreamSession = ({
     }),
     threadId: threadId ?? null,
     fetchStateHistory: true,
+    initialValues,
     onCustomEvent: (event, options) => {
       if (isUIMessage(event) || isRemoveUIMessage(event)) {
         options.mutate((prev) => {
@@ -113,6 +122,47 @@ const StreamSession = ({
       sleep().then(() => getThreads().then(setThreads).catch(console.error));
     },
   });
+
+  useEffect(() => {
+    if (!threadId) return;
+    if (streamValue.isThreadLoading) return;
+    if ((streamValue.messages?.length ?? 0) > 0) return;
+
+    let cancelled = false;
+    const client = createClient(
+      apiUrl,
+      apiKey ?? undefined,
+      authScheme,
+    );
+    client.threads
+      .get(threadId)
+      .then((thread) => {
+        if (cancelled) return;
+        const values = thread.values as StateType | undefined;
+        const msgs = values?.messages;
+        if (Array.isArray(msgs) && msgs.length > 0) {
+          setInitialValues(values);
+          return;
+        }
+        toast.message("此對話無法載入內容", {
+          description: "checkpoint 可能已遺失（例如後端重啟後）。可開新對話繼續。",
+        });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    threadId,
+    streamValue.isThreadLoading,
+    streamValue.messages?.length,
+    apiUrl,
+    apiKey,
+    authScheme,
+  ]);
 
   useEffect(() => {
     checkGraphStatus(apiUrl, apiKey, authScheme).then((ok) => {
@@ -179,17 +229,17 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
   if (!finalApiUrl || !finalAssistantId) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center p-4">
-        <div className="animate-in fade-in-0 zoom-in-95 bg-background flex max-w-3xl flex-col rounded-lg border shadow-lg">
+        <div className="animate-in fade-in-0 zoom-in-95 border-border bg-panel text-panel-foreground flex max-w-3xl flex-col rounded-2xl border shadow-lg">
           <div className="mt-14 flex flex-col gap-2 border-b p-6">
             <div className="flex flex-col items-start gap-2">
-              <LangGraphLogoSVG className="h-7" />
+              <LangGraphLogoSVG className="text-foreground h-8 w-8" />
               <h1 className="text-xl font-semibold tracking-tight">
-                Agent Chat
+                W.AgentChat
               </h1>
             </div>
             <p className="text-muted-foreground">
-              Welcome to Agent Chat! Before you get started, you need to enter
-              the URL of the deployment and the assistant / graph ID.
+              Welcome to W.AgentChat. Enter the deployment URL and assistant /
+              graph ID to continue.
             </p>
           </div>
           <form
@@ -209,7 +259,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
 
               form.reset();
             }}
-            className="bg-muted/50 flex flex-col gap-6 p-6"
+            className="bg-muted/40 flex flex-col gap-6 p-6"
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="apiUrl">
@@ -285,6 +335,7 @@ export const StreamProvider: React.FC<{ children: ReactNode }> = ({
               <Button
                 type="submit"
                 size="lg"
+                variant="accent"
               >
                 Continue
                 <ArrowRight className="size-5" />

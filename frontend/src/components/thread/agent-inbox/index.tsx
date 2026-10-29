@@ -57,7 +57,7 @@ export function ThreadView({ interrupt }: ThreadViewProps) {
   }
 
   return (
-    <div className="flex h-full w-full flex-col rounded-2xl bg-gray-50 p-8 lg:flex-row">
+    <div className="flex h-full w-full flex-col rounded-sm bg-muted p-8 lg:flex-row">
       {showSidePanel ? (
         <StateView
           handleShowSidePanel={handleShowSidePanel}
@@ -79,10 +79,10 @@ export function ThreadView({ interrupt }: ThreadViewProps) {
                     type="button"
                     onClick={() => setActiveInterruptIndex(idx)}
                     className={cn(
-                      "rounded-full border px-3 py-1 text-sm transition-colors",
+                      "rounded-sm border px-3 py-1 text-sm transition-colors",
                       idx === activeInterruptIndex
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "hover:border-primary hover:text-primary border-gray-300 bg-white text-gray-600",
+                        ? "border-accent bg-accent/15 text-foreground"
+                        : "hover:border-primary hover:text-primary border-border bg-panel text-muted-foreground",
                     )}
                   >
                     {title}
