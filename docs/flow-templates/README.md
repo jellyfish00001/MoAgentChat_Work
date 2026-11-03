@@ -9,7 +9,7 @@
 預覽：開 `.md` → `Ctrl+Shift+V`（建議擴充 `bierner.markdown-mermaid`）。  
 每個 `01`／`02`／`03`：**上半**＝現行 Graph；**下半「原始客戶需求」**＝客戶 README 原樣附錄。附錄 ≠ 已 100% 實作。
 
-- **業務待決問題（請回覆）：** [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)  
+- **業務待決問題（請回覆）：** [OPEN-QUESTIONS-請回覆.txt](OPEN-QUESTIONS-請回覆.txt)（純文字，可貼 Jira）；完整追蹤 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)  
 - **產出形態：** 規則／金額／Excel／HTML＝程式；LLM＝文案節點。
 
 ## 三流程總覽

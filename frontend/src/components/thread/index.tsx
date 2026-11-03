@@ -142,7 +142,10 @@ export function Thread() {
   });
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
-    parseAsBoolean.withDefault(false),
+    parseAsBoolean.withDefault(false).withOptions({
+      history: "replace",
+      shallow: true,
+    }),
   );
   const [hideToolCalls, setHideToolCalls] = useQueryState(
     "hideToolCalls",
@@ -297,16 +300,29 @@ export function Thread() {
   );
 
   return (
-    <div className="flex h-screen w-full overflow-hidden">
-      <div className="relative hidden lg:flex">
+    <div className="relative flex h-screen w-full overflow-hidden">
+      {/* 全視窗海洋／聚光：不隨側欄開合 resize，避免 canvas 重建閃爍 */}
+      {ocean.enabled && (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 z-0 overflow-hidden",
+            chatStarted && "opacity-40",
+          )}
+        >
+          <AsciiOcean sharks={sharkRoster} />
+          <div className="from-background/90 via-background/30 absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent" />
+        </div>
+      )}
+      <div
+        aria-hidden
+        className="spotlight-focus pointer-events-none absolute inset-0 z-[5]"
+      />
+
+      <div className="relative z-20 hidden lg:flex">
         <motion.div
-          className="border-sidebar-border bg-sidebar absolute z-20 h-full overflow-hidden border-r"
+          className="border-sidebar-border bg-sidebar/95 absolute h-full overflow-hidden border-r backdrop-blur-md"
           style={{ width: 300 }}
-          animate={
-            isLargeScreen
-              ? { x: chatHistoryOpen ? 0 : -300 }
-              : { x: chatHistoryOpen ? 0 : -300 }
-          }
+          animate={{ x: chatHistoryOpen ? 0 : -300 }}
           initial={{ x: -300 }}
           transition={
             isLargeScreen
@@ -325,7 +341,7 @@ export function Thread() {
 
       <div
         className={cn(
-          "grid w-full grid-cols-[1fr_0fr] transition-all duration-500",
+          "relative z-10 grid w-full grid-cols-[1fr_0fr] transition-all duration-500",
           artifactOpen && "grid-cols-[3fr_2fr]",
         )}
       >
@@ -334,7 +350,6 @@ export function Thread() {
             "relative flex min-w-0 flex-1 flex-col overflow-hidden",
             !chatStarted && "grid-rows-[1fr]",
           )}
-          layout={isLargeScreen}
           animate={{
             marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
             width: chatHistoryOpen
@@ -349,18 +364,6 @@ export function Thread() {
               : { duration: 0 }
           }
         >
-          {/* ASCII 海洋全程保留；對話中略降透明度以保訊息可讀 */}
-          {ocean.enabled && (
-            <div
-              className={cn(
-                "pointer-events-none absolute inset-0 z-0 overflow-hidden",
-                chatStarted && "opacity-40",
-              )}
-            >
-              <AsciiOcean sharks={sharkRoster} />
-              <div className="from-background/90 via-background/30 absolute inset-x-0 top-0 h-24 bg-gradient-to-b to-transparent" />
-            </div>
-          )}
           {/* Sticky top bar — frosted so scrolled messages don't collide with logo */}
           <div className="border-border/40 bg-background/75 absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 border-b p-2 pl-4 backdrop-blur-md">
             <div className="relative flex min-w-0 flex-1 items-center justify-start gap-2">

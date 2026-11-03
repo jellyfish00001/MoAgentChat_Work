@@ -357,7 +357,7 @@ export class AsciiRenderer {
   /** Near-upstream fish alpha — dashes read as schools / ripples. */
   private fishStyles = FISH_ALPHAS.map((a) => `rgba(230,238,255,${a.toFixed(3)})`);
   /** Soften shark body so fish / water texture stays more present. */
-  private sharkOpacity = 0.46;
+  private sharkOpacity = 0.4;
   private bgColor = "#000000";
   private gridColor = "rgba(255,255,255,0.055)";
   private accents = DEFAULT_ACCENTS.slice();
@@ -395,10 +395,10 @@ export class AsciiRenderer {
     }
     if (palette.accents.length) this.accents = palette.accents.slice();
     const [fr, fg, fb] = palette.fish;
-    // Light paper: slightly stronger than dark theme, still soft.
+    // Soft alphas — light paper stays readable but not loud.
     const alphas = this.isLightBg(palette.bg)
-      ? [0.38, 0.48, 0.58, 0.7, 0.82]
-      : FISH_ALPHAS;
+      ? [0.28, 0.38, 0.48, 0.58, 0.7]
+      : [0.22, 0.34, 0.48, 0.62, 0.78];
     this.fishStyles = alphas.map(
       (a) => `rgba(${fr},${fg},${fb},${a.toFixed(3)})`,
     );

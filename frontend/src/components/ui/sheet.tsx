@@ -66,13 +66,16 @@ function SheetContent({
   className,
   children,
   side = "right",
+  showOverlay = true,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left";
+  /** 歷史側欄等場景可不蓋遮罩，避免背景閃爍 */
+  showOverlay?: boolean;
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      {showOverlay ? <SheetOverlay /> : null}
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(

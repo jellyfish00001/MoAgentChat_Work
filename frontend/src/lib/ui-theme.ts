@@ -3,7 +3,7 @@
 export type UiTheme = "wistron-dark" | "wistron-light";
 
 export const UI_THEME_KEY = "ai_prepare.ui_theme";
-export const DEFAULT_UI_THEME: UiTheme = "wistron-light";
+export const DEFAULT_UI_THEME: UiTheme = "wistron-dark";
 
 export const UI_THEMES: {
   value: UiTheme;
@@ -19,7 +19,7 @@ export const UI_THEMES: {
   {
     value: "wistron-dark",
     label: "Dark",
-    swatch: ["#0B1921", "#A7DD6C"],
+    swatch: ["#152A36", "#A7DD6C"],
   },
 ];
 
@@ -29,8 +29,8 @@ export function migrateLegacyTheme(raw: unknown): UiTheme {
   if (raw === "wistron-light") return "wistron-light";
   if (raw === "dark") return "wistron-dark";
   if (raw === "light") return "wistron-light";
-  // Former classic / wistron → light (new default)
-  if (raw === "wistron-classic" || raw === "wistron") return "wistron-light";
+  // Former classic / wistron → dark default
+  if (raw === "wistron-classic" || raw === "wistron") return "wistron-dark";
   return DEFAULT_UI_THEME;
 }
 

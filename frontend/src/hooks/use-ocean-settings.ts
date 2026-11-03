@@ -35,9 +35,9 @@ export const MAX_SHARK_SPEED = 1.5;
 
 const DEFAULTS: OceanSettingsState = {
   enabled: true,
-  sharkCount: 4,
+  sharkCount: 1,
   sharkSizeScale: 1,
-  sharkSpeedScale: 1,
+  sharkSpeedScale: 0.8,
   theme: DEFAULT_UI_THEME,
 };
 

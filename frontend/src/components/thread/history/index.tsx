@@ -92,7 +92,10 @@ export default function ThreadHistory() {
   const [mounted, setMounted] = useState(false);
   const [chatHistoryOpen, setChatHistoryOpen] = useQueryState(
     "chatHistoryOpen",
-    parseAsBoolean.withDefault(false),
+    parseAsBoolean.withDefault(false).withOptions({
+      history: "replace",
+      shallow: true,
+    }),
   );
 
   const { getThreads, threads, setThreads, threadsLoading, setThreadsLoading } =
@@ -155,6 +158,7 @@ export default function ThreadHistory() {
       {mounted && (
         <div className="lg:hidden">
           <Sheet
+            modal={false}
             open={!!chatHistoryOpen && !isLargeScreen}
             onOpenChange={(open) => {
               if (isLargeScreen) return;
@@ -163,6 +167,7 @@ export default function ThreadHistory() {
           >
             <SheetContent
               side="left"
+              showOverlay={false}
               className="flex flex-col gap-4 lg:hidden"
             >
               <SheetHeader>

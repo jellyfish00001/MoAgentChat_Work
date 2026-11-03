@@ -19,11 +19,12 @@ const themeInitScript = `
       if(o){ try{ var p=JSON.parse(o); t=p&&p.theme; }catch(e){} }
     }
     if(t==='dark') t='wistron-dark';
-    else if(t==='light' || t==='wistron' || t==='wistron-classic') t='wistron-light';
-    if(t!=='wistron-dark'&&t!=='wistron-light') t='wistron-light';
+    else if(t==='light') t='wistron-light';
+    else if(t==='wistron' || t==='wistron-classic') t='wistron-dark';
+    if(t!=='wistron-dark'&&t!=='wistron-light') t='wistron-dark';
     document.documentElement.setAttribute('data-theme', t);
   } catch(e) {
-    document.documentElement.setAttribute('data-theme','wistron-light');
+    document.documentElement.setAttribute('data-theme','wistron-dark');
   }
 })();
 `;
@@ -36,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="wistron-light"
+      data-theme="wistron-dark"
       suppressHydrationWarning
     >
       <head>

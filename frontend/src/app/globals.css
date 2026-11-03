@@ -9,14 +9,14 @@
 
 :root,
 [data-theme="wistron-light"] {
-  /* Soft frosted paper — default Light */
-  --background: #e8eef1;
+  /* Soft cool white paper */
+  --background: #eef3f5;
   --foreground: #1a2c34;
-  --panel: color-mix(in srgb, #ffffff 72%, #d5e0e6 28%);
+  --panel: color-mix(in srgb, #ffffff 78%, #d0dde4 22%);
   --panel-foreground: #1a2c34;
-  --card: color-mix(in srgb, #ffffff 78%, #d8e3e8 22%);
+  --card: color-mix(in srgb, #ffffff 82%, #d2e0e6 18%);
   --card-foreground: #1a2c34;
-  --popover: color-mix(in srgb, #ffffff 80%, #d8e3e8 20%);
+  --popover: color-mix(in srgb, #ffffff 84%, #d2e0e6 16%);
   --popover-foreground: #1a2c34;
   --primary: #3d7388;
   --primary-foreground: #f5f8fa;
@@ -44,60 +44,71 @@
   --chart-1: #7eae52;
   --chart-2: #3d7388;
   --chart-3: #1a2c34;
-  --chart-4: #e8eef1;
+  --chart-4: #eef3f5;
   --chart-5: #a3c97a;
-  --ascii-bg: #dde6eb;
-  --ascii-grid: rgba(61, 115, 136, 0.1);
-  --ascii-dot-1: 61 115 136;
-  --ascii-dot-2: 90 122 48;
-  --ascii-dot-3: 100 150 165;
-  --ascii-dot-4: 50 95 110;
-  --ascii-wake: 80 130 148;
-  --ascii-accent: #7eae52;
-  /* Soft teal-green — visible but not loud on frosted paper */
-  --ascii-fish: 58 110 88;
+  --ascii-bg: #e8eef2;
+  /* Softer grid — barely there on frosted paper */
+  --ascii-grid: rgba(61, 115, 136, 0.045);
+  --ascii-dot-1: 90 130 145;
+  --ascii-dot-2: 110 135 95;
+  --ascii-dot-3: 120 155 165;
+  --ascii-dot-4: 85 120 130;
+  --ascii-wake: 100 140 150;
+  --ascii-accent: #8fbc7a;
+  /* Soft teal-green — further muted */
+  --ascii-fish: 78 118 100;
+  /* Light: black-blue vignette only (clear center, navy rim — no green) */
+  --spotlight-center: transparent;
+  --spotlight-edge: color-mix(in srgb, #152a38 8%, transparent);
+  --spotlight-rim: color-mix(in srgb, #07141c 13%, transparent);
 }
 
 [data-theme="wistron-dark"] {
-  --background: #0b1921;
+  /* Lifted navy — less near-black */
+  --background: #152a36;
   --foreground: #e8f2f6;
-  --panel: #122c39;
+  --panel: #1c3a4a;
   --panel-foreground: #e8f2f6;
-  --card: #122c39;
+  --card: #1c3a4a;
   --card-foreground: #e8f2f6;
-  --popover: #122c39;
+  --popover: #1c3a4a;
   --popover-foreground: #e8f2f6;
   --primary: #42a9c7;
-  --primary-foreground: #0b1921;
-  --secondary: #1a3a4a;
+  --primary-foreground: #0f1e26;
+  --secondary: #254a5c;
   --secondary-foreground: #e8f2f6;
-  --muted: #1a3a4a;
-  --muted-foreground: #8ba8c9;
+  --muted: #254a5c;
+  --muted-foreground: #9bb4c9;
   --accent: #a7dd6c;
-  --accent-foreground: #0b1921;
+  --accent-foreground: #0f1e26;
   --accent-muted: #7aad45;
   --destructive: #e03a32;
   --destructive-foreground: #ffffff;
-  --border: #1e4558;
-  --input: #1e4558;
+  --border: #2a5568;
+  --input: #2a5568;
   --ring: #a7dd6c;
-  --sidebar: #122c39;
+  --sidebar: #1c3a4a;
   --sidebar-foreground: #e8f2f6;
   --sidebar-primary: #a7dd6c;
-  --sidebar-primary-foreground: #0b1921;
-  --sidebar-accent: #1a3a4a;
+  --sidebar-primary-foreground: #0f1e26;
+  --sidebar-accent: #254a5c;
   --sidebar-accent-foreground: #e8f2f6;
-  --sidebar-border: #1e4558;
+  --sidebar-border: #2a5568;
   --sidebar-ring: #a7dd6c;
-  --ascii-bg: #08141a;
-  --ascii-grid: rgba(66, 169, 199, 0.12);
-  --ascii-dot-1: 66 169 199;
-  --ascii-dot-2: 167 221 108;
-  --ascii-dot-3: 100 140 160;
-  --ascii-dot-4: 180 210 230;
-  --ascii-wake: 66 169 199;
-  --ascii-accent: #a7dd6c;
-  --ascii-fish: 180 210 230;
+  --ascii-bg: #122633;
+  /* Softer grid on deep navy */
+  --ascii-grid: rgba(66, 169, 199, 0.055);
+  --ascii-dot-1: 70 140 165;
+  --ascii-dot-2: 120 170 100;
+  --ascii-dot-3: 90 125 145;
+  --ascii-dot-4: 140 170 185;
+  --ascii-wake: 70 140 165;
+  --ascii-accent: #8fbc70;
+  --ascii-fish: 140 175 190;
+  /* Dark: green accent halo + soft depth rim */
+  --spotlight-center: color-mix(in srgb, var(--accent) 8%, transparent);
+  --spotlight-edge: color-mix(in srgb, var(--accent) 3%, transparent);
+  --spotlight-rim: color-mix(in srgb, #061018 6%, transparent);
 }
 
 @theme inline {
@@ -177,5 +188,25 @@
 
   .scrollbar-ocean::-webkit-scrollbar-track {
     background: transparent;
+  }
+
+  /*
+   * Spotlight — light: navy vignette; dark: green core (theme tokens).
+   * Overlay sits above chat scroll (z-5).
+   */
+  .spotlight-focus {
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 48% 40% at 50% 38%,
+        var(--spotlight-center) 0%,
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 92% 88% at 50% 50%,
+        transparent 28%,
+        var(--spotlight-edge) 62%,
+        var(--spotlight-rim) 100%
+      );
   }
 }
