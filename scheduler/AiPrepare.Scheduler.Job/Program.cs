@@ -1,10 +1,10 @@
-using AiPrepare.Scheduler.Application.Abstractions;
 using AiPrepare.Scheduler.Infrastructure;
 using AiPrepare.Scheduler.Job;
 using Hangfire;
 using Hangfire.Dashboard.BasicAuthorization;
 using Hangfire.MemoryStorage;
 
+// Hangfire 宿主：只註冊薄 Job；業務在 Application。
 var builder = WebApplication.CreateBuilder(args);
 
 var sqlitePath = builder.Configuration["SCHEDULE_DB_PATH"]
@@ -20,7 +20,7 @@ builder.Services.AddHangfire(c => c
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
     .UseRecommendedSerializerSettings()
-    .UseMemoryStorage());
+    .UseMemoryStorage()); // 本機 POC；正式應換持久 storage（見 .cursor guide）
 builder.Services.AddHangfireServer();
 builder.Services.AddScoped<ProcessDueSchedulesJob>();
 
@@ -48,7 +48,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     ],
 });
 
-// Register by type so Hangfire Activator resolves a fresh scope each run (avoid capturing scoped instance).
+// 依型別註冊，避免閉包綁死 scoped 實例（ERS 常見坑）
 RecurringJob.AddOrUpdate<ProcessDueSchedulesJob>(
     "ProcessDueSchedulesJob",
     j => j.RunAsync(),

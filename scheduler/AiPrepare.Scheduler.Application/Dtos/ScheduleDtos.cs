@@ -2,6 +2,7 @@ using AiPrepare.Scheduler.Domain;
 
 namespace AiPrepare.Scheduler.Application.Dtos;
 
+/// <summary>建立排程請求。</summary>
 public sealed record CreateScheduleRequest(
     string UserId,
     string Title,
@@ -13,6 +14,7 @@ public sealed record CreateScheduleRequest(
     string? AssistantId = null,
     string? ApiUrl = null);
 
+/// <summary>部分更新請求（null 表示不改）。</summary>
 public sealed record PatchScheduleRequest(
     string? Title,
     string? Prompt,
@@ -22,6 +24,7 @@ public sealed record PatchScheduleRequest(
     DayOfWeek? Weekday,
     int? IntervalHours);
 
+/// <summary>排程 API 回應（含最近 thread）。</summary>
 public sealed record ScheduleDto(
     Guid Id,
     string UserId,
@@ -38,6 +41,7 @@ public sealed record ScheduleDto(
     DateTimeOffset? LastRunAt,
     string? LastThreadId);
 
+/// <summary>單次執行 API 回應。</summary>
 public sealed record ScheduleRunDto(
     Guid Id,
     Guid ScheduleId,

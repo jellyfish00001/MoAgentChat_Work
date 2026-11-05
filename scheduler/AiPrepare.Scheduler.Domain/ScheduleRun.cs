@@ -1,6 +1,6 @@
 namespace AiPrepare.Scheduler.Domain;
 
-/// <summary>One execution attempt; links to LangGraph thread when succeeded.</summary>
+/// <summary>單次排程執行紀錄（對應一次 LangGraph thread）。</summary>
 public sealed class ScheduleRun
 {
     public Guid Id { get; set; }

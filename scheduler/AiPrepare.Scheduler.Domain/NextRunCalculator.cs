@@ -1,8 +1,9 @@
 namespace AiPrepare.Scheduler.Domain;
 
-/// <summary>Pure next-fire calculation in Asia/Taipei wall clock (no I/O).</summary>
+/// <summary>純計算下次觸發時間（Asia/Taipei 牆鐘；無 IO）。</summary>
 public static class NextRunCalculator
 {
+    /// <summary>依排程種類計算下一次 UTC 觸發點。</summary>
     public static DateTimeOffset ComputeNext(
         ScheduleKind kind,
         DateTimeOffset fromUtc,
@@ -23,6 +24,7 @@ public static class NextRunCalculator
         };
     }
 
+    /// <summary>解析時區；Windows 可能沒有 IANA id 時改用台北標準時間。</summary>
     static TimeZoneInfo ResolveTz(string id)
     {
         try
@@ -31,11 +33,11 @@ public static class NextRunCalculator
         }
         catch (TimeZoneNotFoundException)
         {
-            // Windows often uses this id for Taipei
             return TimeZoneInfo.FindSystemTimeZoneById("Taipei Standard Time");
         }
     }
 
+    /// <summary>每日：若今日時刻已過則加一天，再轉回 UTC。</summary>
     static DateTimeOffset NextDaily(DateTimeOffset localNow, TimeOnly tod, TimeZoneInfo tz)
     {
         var candidate = new DateTimeOffset(
@@ -46,6 +48,7 @@ public static class NextRunCalculator
         return TimeZoneInfo.ConvertTime(candidate, TimeZoneInfo.Utc);
     }
 
+    /// <summary>每週：對齊目標星期；若已過則加七天。</summary>
     static DateTimeOffset NextWeekly(DateTimeOffset localNow, TimeOnly tod, DayOfWeek weekday, TimeZoneInfo tz)
     {
         var daysAhead = ((int)weekday - (int)localNow.DayOfWeek + 7) % 7;
@@ -56,6 +59,7 @@ public static class NextRunCalculator
         return TimeZoneInfo.ConvertTime(candidate, TimeZoneInfo.Utc);
     }
 
+    /// <summary>固定間隔小時（以 UTC 加法，不綁牆鐘）。</summary>
     static DateTimeOffset NextEveryNHours(DateTimeOffset fromUtc, int hours)
         => fromUtc.AddHours(hours);
 }

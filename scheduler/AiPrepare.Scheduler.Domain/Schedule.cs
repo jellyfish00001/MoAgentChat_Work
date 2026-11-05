@@ -1,6 +1,6 @@
 namespace AiPrepare.Scheduler.Domain;
 
-/// <summary>User-owned schedule row; Hangfire only scans due rows, one system job.</summary>
+/// <summary>使用者擁有的排程列；Hangfire 只掃到期列，系統僅一條 due-scanner。</summary>
 public sealed class Schedule
 {
     public Guid Id { get; set; }

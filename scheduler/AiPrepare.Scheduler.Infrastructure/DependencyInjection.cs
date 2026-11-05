@@ -7,8 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AiPrepare.Scheduler.Infrastructure;
 
+/// <summary>Api／Job 共用的 DI 組裝（SQLite + Application + LangGraph）。</summary>
 public static class DependencyInjection
 {
+    /// <summary>註冊核心服務；資料庫檔放專案外路徑。</summary>
     public static IServiceCollection AddSchedulerCore(this IServiceCollection services, string sqlitePath)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(sqlitePath)!);
@@ -22,6 +24,7 @@ public static class DependencyInjection
         return services;
     }
 
+    /// <summary>EnsureCreated：MVP 無 migration；正式可改 SQL Server + migrate。</summary>
     public static async Task EnsureDbAsync(this IServiceProvider sp, CancellationToken ct = default)
     {
         using var scope = sp.CreateScope();

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AiPrepare.Scheduler.Infrastructure.LangGraph;
 
-/// <summary>HTTP adapter for local LangGraph Agent Server (threads + runs).</summary>
+/// <summary>本機 LangGraph Agent Server HTTP 適配（threads + runs/wait）。</summary>
 public sealed class LangGraphHttpClient : ILangGraphClient
 {
     private readonly IHttpClientFactory _httpFactory;
@@ -18,12 +18,14 @@ public sealed class LangGraphHttpClient : ILangGraphClient
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
+    /// <summary>注入具名 HttpClient 與日誌。</summary>
     public LangGraphHttpClient(IHttpClientFactory httpFactory, ILogger<LangGraphHttpClient> log)
     {
         _httpFactory = httpFactory;
         _log = log;
     }
 
+    /// <summary>建立新 thread 並同步跑完一輪；metadata 標記 source=schedule。</summary>
     public async Task<LangGraphRunResult> CreateThreadAndRunAsync(LangGraphRunRequest request, CancellationToken ct = default)
     {
         var client = _httpFactory.CreateClient("langgraph");
@@ -32,6 +34,7 @@ public sealed class LangGraphHttpClient : ILangGraphClient
 
         try
         {
+            // 1. 建立 thread（徽章／頂欄靠 metadata.source）
             var threadBody = new
             {
                 metadata = new Dictionary<string, object>
@@ -52,6 +55,7 @@ public sealed class LangGraphHttpClient : ILangGraphClient
             var threadId = threadDoc.RootElement.GetProperty("thread_id").GetString()
                 ?? throw new InvalidOperationException("missing thread_id");
 
+            // 2. runs/wait：以排程 Prompt 當 human message
             var runBody = new
             {
                 assistant_id = request.AssistantId,

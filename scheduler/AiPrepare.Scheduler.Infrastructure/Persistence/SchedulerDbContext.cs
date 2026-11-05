@@ -3,13 +3,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AiPrepare.Scheduler.Infrastructure.Persistence;
 
+/// <summary>排程 SQLite DbContext。</summary>
 public sealed class SchedulerDbContext : DbContext
 {
+    /// <summary>標準 EF 建構。</summary>
     public SchedulerDbContext(DbContextOptions<SchedulerDbContext> options) : base(options) { }
 
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ScheduleRun> ScheduleRuns => Set<ScheduleRun>();
 
+    /// <summary>索引與長度限制（利於 due 掃描與使用者列表）。</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Schedule>(e =>
