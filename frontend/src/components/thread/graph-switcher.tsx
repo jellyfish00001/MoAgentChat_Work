@@ -15,14 +15,13 @@ import {
 import { useLocalAccess } from "@/hooks/use-local-access";
 import { useQueryState } from "nuqs";
 
+/** 一組可選 Graph tab（無群組標題，僅按鈕列）。 */
 function GraphGroup({
-  title,
   options,
   current,
   compact,
   onSelect,
 }: {
-  title: string;
   options: LocalGraphOption[];
   current: string;
   compact: boolean;
@@ -31,9 +30,6 @@ function GraphGroup({
   if (options.length === 0) return null;
   return (
     <div className="flex flex-col gap-1">
-      <div className="text-muted-foreground px-1 text-[11px] font-medium tracking-wide uppercase">
-        {title}
-      </div>
       {options.map((g) => {
         const selected = g.id === current;
         return (
@@ -62,6 +58,7 @@ function GraphGroup({
   );
 }
 
+/** 側欄角色切換：僅顯示可選 Graph，不含說明文案。 */
 export function GraphSwitcher({
   className,
   compact = false,
@@ -84,6 +81,7 @@ export function GraphSwitcher({
   const publicGraphs = allowed.filter((g) => g.access === "public");
   const financeGraphs = allowed.filter((g) => g.access === "finance");
 
+  /** 無財務權限時強制退回公開 Demo Graph。 */
   useEffect(() => {
     if (!hydrated) return;
     if (!isFinanceGraph(current)) return;
@@ -92,26 +90,22 @@ export function GraphSwitcher({
     void setThreadId(null);
   }, [hydrated, hasFinance, current, setAssistantId, setThreadId]);
 
+  /** 切換 Graph：清 threadId，由 StreamSession 重建對話。 */
   const selectGraph = (id: string) => {
     if (id === current) return;
     if (!allowed.some((g) => g.id === id)) return;
-    // 一次更新，避免連續改 URL 造成閃爍；清對話由 StreamSession 聽 assistantId
     void setThreadId(null);
     void setAssistantId(id);
   };
 
   return (
-    <div className={cn("flex w-full flex-col gap-3 px-3", className)}>
-      <div className="text-muted-foreground px-1 text-xs font-medium tracking-wide uppercase">
-        LangGraph
-      </div>
+    <div className={cn("flex w-full flex-col gap-2 px-3", className)}>
       <div
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-2"
         role="tablist"
         aria-label="選擇 LangGraph 流程"
       >
         <GraphGroup
-          title="全員 · Demo"
           options={publicGraphs}
           current={current}
           compact={compact}
@@ -119,26 +113,18 @@ export function GraphSwitcher({
         />
         {hasFinance ? (
           <GraphGroup
-            title="財務專用"
             options={financeGraphs}
             current={current}
             compact={compact}
             onSelect={selectGraph}
           />
-        ) : (
-          <p className="text-muted-foreground px-1 text-[11px] leading-snug">
-            財務三條路線已隱藏。右上角切換為「財務」後可見。
-          </p>
-        )}
+        ) : null}
       </div>
-      <p className="text-muted-foreground px-1 text-[11px] leading-snug">
-        目前：{resolveGraphLabel(current)}
-        {hydrated ? (hasFinance ? " · 財務權限" : " · 一般") : ""}
-      </p>
     </div>
   );
 }
 
+/** 主畫面頂欄顯示目前 Graph 標籤。 */
 export function CurrentGraphBadge({ className }: { className?: string }) {
   const envAssistantId = process.env.NEXT_PUBLIC_ASSISTANT_ID;
   const [assistantId] = useQueryState("assistantId", {

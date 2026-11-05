@@ -1,15 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   deleteSchedule,
   listSchedules,
-  patchSchedule,
   runScheduleNow,
-  ScheduleKind,
   type ScheduleDto,
 } from "@/lib/schedule-api";
 import { useLocalUser } from "@/hooks/useLocalUser";
@@ -18,103 +15,100 @@ import { useStreamContext } from "@/providers/Stream";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
-  ExternalLink,
+  ChevronDown,
+  ChevronRight,
   LoaderCircle,
+  Pencil,
   Play,
-  RefreshCw,
+  Plus,
   Trash2,
 } from "lucide-react";
-import { ScheduleForm } from "./ScheduleForm";
-import { Separator } from "@/components/ui/separator";
+import { ScheduleDialog } from "./ScheduleDialog";
 
-/** 依 kind 產生側欄一列的週期摘要文字。 */
-function kindLabel(s: ScheduleDto): string {
-  if (s.kind === ScheduleKind.EveryNHours) {
-    return `每 ${s.intervalHours ?? "?"} 小時`;
-  }
-  const t = s.timeOfDay?.slice(0, 5) ?? "??:??";
-  if (s.kind === ScheduleKind.Weekly) {
-    const days = ["日", "一", "二", "三", "四", "五", "六"];
-    const d = s.weekday != null ? days[s.weekday] : "?";
-    return `每週${d} ${t}`;
-  }
-  return `每日 ${t}`;
+/** 啟用排程在前、暫不執行在後；同組依標題排序。 */
+function sortSchedules(list: ScheduleDto[]): ScheduleDto[] {
+  return [...list].sort((a, b) => {
+    if (a.enabled !== b.enabled) return a.enabled ? -1 : 1;
+    return a.title.localeCompare(b.title, "zh-Hant");
+  });
 }
 
-/** 單筆排程：啟用開關、立即執行、上次對話與刪除。 */
+/** 單列：名稱開上次對話；圖示左→右為刪除／立即執行／編輯。 */
 function ScheduleRow({
   item,
   busy,
-  onToggle,
   onDelete,
   onRunNow,
-  onOpenThread,
+  onEdit,
+  onOpenLast,
 }: {
   item: ScheduleDto;
   busy: boolean;
-  onToggle: (enabled: boolean) => void;
   onDelete: () => void;
   onRunNow: () => void;
-  onOpenThread: (threadId: string) => void;
+  onEdit: () => void;
+  onOpenLast: () => void;
 }) {
   return (
-    <div className="border-border bg-background/50 flex flex-col gap-2 rounded-xl border p-2.5">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{item.title}</p>
-          <p className="text-muted-foreground text-[11px]">{kindLabel(item)}</p>
-        </div>
-        <Switch
-          checked={item.enabled}
-          disabled={busy}
-          onCheckedChange={onToggle}
-          aria-label={item.enabled ? "停用排程" : "啟用排程"}
-        />
-      </div>
-      <div className="flex flex-wrap gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          disabled={busy}
-          onClick={onRunNow}
-        >
-          {busy ? (
-            <LoaderCircle className="size-3.5 animate-spin" />
-          ) : (
-            <Play className="size-3.5" />
-          )}
-          立即執行
-        </Button>
-        {item.lastThreadId ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs"
-            onClick={() => onOpenThread(item.lastThreadId!)}
-          >
-            <ExternalLink className="size-3.5" />
-            上次對話
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="text-destructive hover:text-destructive ml-auto h-7 px-2 text-xs"
-          disabled={busy}
-          onClick={onDelete}
-        >
-          <Trash2 className="size-3.5" />
-        </Button>
-      </div>
+    <div
+      className={cn(
+        "group flex items-center gap-0.5 rounded-lg px-1.5 py-1",
+        !item.enabled && "opacity-45",
+      )}
+    >
+      <button
+        type="button"
+        className="text-foreground hover:bg-muted min-w-0 flex-1 truncate rounded-md px-1.5 py-1 text-left text-sm"
+        onClick={onOpenLast}
+        title={item.title}
+      >
+        {item.title}
+      </button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground hover:text-destructive size-7 shrink-0 opacity-70 group-hover:opacity-100"
+        disabled={busy}
+        onClick={onDelete}
+        title="刪除"
+        aria-label="刪除排程"
+      >
+        <Trash2 className="size-3.5" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground size-7 shrink-0 opacity-70 group-hover:opacity-100"
+        disabled={busy}
+        onClick={onRunNow}
+        title="立即執行"
+        aria-label="立即執行"
+      >
+        {busy ? (
+          <LoaderCircle className="size-3.5 animate-spin" />
+        ) : (
+          <Play className="size-3.5" />
+        )}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="text-muted-foreground size-7 shrink-0 opacity-70 group-hover:opacity-100"
+        disabled={busy}
+        onClick={onEdit}
+        title="編輯"
+        aria-label="編輯排程"
+      >
+        <Pencil className="size-3.5" />
+      </Button>
     </div>
   );
 }
 
-/** 歷史側欄中的排程列表與底部新增表單。 */
+/** GPT 專案式橫幅：左側展開／收合，右側加號開新增彈窗。 */
 export function ScheduleSidebar({
   className,
   compact,
@@ -130,7 +124,12 @@ export function ScheduleSidebar({
   const [, setThreadId] = useQueryState("threadId");
   const [items, setItems] = useState<ScheduleDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState(true);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<ScheduleDto | null>(null);
+
+  const sorted = useMemo(() => sortSchedules(items), [items]);
 
   /** 依本機 userId 重新拉取排程列表。 */
   const refresh = useCallback(async () => {
@@ -152,10 +151,21 @@ export function ScheduleSidebar({
     void refresh();
   }, [refresh]);
 
-  /** 切換 query threadId 並載入 LangGraph 對話。 */
+  /** 切換至指定 thread；無 lastThreadId 時由呼叫端 toast。 */
   const openThread = (id: string) => {
     void setThreadId(id);
     stream.switchThread(id);
+  };
+
+  /** 點名稱：有 lastThreadId 則開對話，否則提示。 */
+  const handleOpenLast = (item: ScheduleDto) => {
+    if (!item.lastThreadId) {
+      toast.message("尚無執行紀錄", {
+        description: "此排程還沒有上次對話可開啟。",
+      });
+      return;
+    }
+    openThread(item.lastThreadId);
   };
 
   /** 列操作共用：鎖定該列、執行 API、失敗 toast、成功後 refresh。 */
@@ -173,69 +183,101 @@ export function ScheduleSidebar({
     }
   };
 
+  /** 開啟新增彈窗。 */
+  const openCreate = () => {
+    setEditing(null);
+    setDialogOpen(true);
+  };
+
+  /** 開啟編輯彈窗。 */
+  const openEdit = (item: ScheduleDto) => {
+    setEditing(item);
+    setDialogOpen(true);
+  };
+
   return (
-    <div className={cn("flex w-full flex-col gap-2", className)}>
-      <div className="flex items-center justify-between px-3">
-        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-          排程
-        </span>
+    <div className={cn("flex w-full flex-col gap-1", className)}>
+      <div className="flex items-center gap-0.5 px-2">
+        <button
+          type="button"
+          className="hover:bg-muted text-foreground flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-sm font-medium"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+        >
+          {expanded ? (
+            <ChevronDown className="text-muted-foreground size-4 shrink-0" />
+          ) : (
+            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+          )}
+          <span className="truncate">排程</span>
+          {!loading && items.length > 0 ? (
+            <span className="text-muted-foreground text-xs font-normal">
+              {items.length}
+            </span>
+          ) : null}
+        </button>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="size-7"
-          onClick={() => void refresh()}
-          title="重新整理"
+          className="size-7 shrink-0"
+          onClick={openCreate}
+          title="新增排程"
+          aria-label="新增排程"
         >
-          <RefreshCw className="size-3.5" />
+          <Plus className="size-4" />
         </Button>
       </div>
-      <div
-        className={cn(
-          "scrollbar-ocean max-h-48 flex flex-col gap-2 overflow-y-auto px-1",
-          compact && "max-h-36",
-        )}
-      >
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full rounded-xl" />
-          ))
-        ) : items.length === 0 ? (
-          <p className="text-muted-foreground px-3 text-xs">尚無排程</p>
-        ) : (
-          items.map((item) => (
-            <ScheduleRow
-              key={item.id}
-              item={item}
-              busy={rowBusy === item.id}
-              onToggle={(enabled) =>
-                void wrapRow(item.id, () =>
-                  patchSchedule(item.id, { enabled }).then(() => undefined),
-                )
-              }
-              onDelete={() =>
-                void wrapRow(item.id, () =>
-                  deleteSchedule(item.id).then(() => undefined),
-                )
-              }
-              onRunNow={() =>
-                void wrapRow(item.id, async () => {
-                  const run = await runScheduleNow(item.id);
-                  if (run.threadId) openThread(run.threadId);
-                  toast.success("已觸發執行");
-                })
-              }
-              onOpenThread={openThread}
-            />
-          ))
-        )}
-      </div>
-      <Separator className="bg-sidebar-border mx-3 w-auto" />
-      <ScheduleForm
+
+      {expanded ? (
+        <div
+          className={cn(
+            "scrollbar-ocean flex flex-col gap-0.5 overflow-y-auto px-1",
+            compact ? "max-h-40" : "max-h-52",
+          )}
+        >
+          {loading ? (
+            Array.from({ length: 2 }).map((_, i) => (
+              <Skeleton key={i} className="mx-1 h-8 rounded-lg" />
+            ))
+          ) : sorted.length === 0 ? (
+            <p className="text-muted-foreground px-3 py-1 text-xs">
+              尚無排程，點 ＋ 新增
+            </p>
+          ) : (
+            sorted.map((item) => (
+              <ScheduleRow
+                key={item.id}
+                item={item}
+                busy={rowBusy === item.id}
+                onDelete={() =>
+                  void wrapRow(item.id, () =>
+                    deleteSchedule(item.id).then(() => undefined),
+                  )
+                }
+                onRunNow={() =>
+                  void wrapRow(item.id, async () => {
+                    const run = await runScheduleNow(item.id);
+                    if (run.threadId) openThread(run.threadId);
+                    toast.success("已觸發執行");
+                  })
+                }
+                onEdit={() => openEdit(item)}
+                onOpenLast={() => handleOpenLast(item)}
+              />
+            ))
+          )}
+        </div>
+      ) : null}
+
+      <ScheduleDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
         assistantId={assistantId || "agent"}
         apiUrl={stream.apiUrl}
         envApiUrl={process.env.NEXT_PUBLIC_API_URL}
-        onCreated={() => void refresh()}
+        editing={editing}
+        onSaved={() => void refresh()}
       />
     </div>
   );
