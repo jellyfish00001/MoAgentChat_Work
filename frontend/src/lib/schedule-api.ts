@@ -25,6 +25,12 @@ export type ScheduleDto = {
   weekday: number | null;
   intervalHours: number | null;
   enabled: boolean;
+  /** 執行結束後是否走通知管線（本機 Mode=Draft 不實發）。 */
+  notifyEnabled: boolean;
+  /** 收件 To（逗號／分號分隔）。 */
+  emailTo: string | null;
+  /** 副本 Cc（逗號／分號分隔）。 */
+  emailCc: string | null;
   nextRunAt: string;
   lastRunAt: string | null;
   lastThreadId: string | null;
@@ -36,6 +42,8 @@ export type ScheduleRunDto = {
   status: number;
   threadId: string | null;
   error: string | null;
+  /** 通知結果摘要：Skipped／Drafted／Failed… */
+  notifyOutcome: string | null;
   startedAt: string;
   finishedAt: string | null;
 };
@@ -50,6 +58,9 @@ export type CreateSchedulePayload = {
   intervalHours: number | null;
   assistantId: string;
   apiUrl: string;
+  notifyEnabled?: boolean;
+  emailTo?: string | null;
+  emailCc?: string | null;
 };
 
 export type PatchSchedulePayload = {
@@ -60,6 +71,9 @@ export type PatchSchedulePayload = {
   timeOfDay?: string | null;
   weekday?: number | null;
   intervalHours?: number | null;
+  notifyEnabled?: boolean;
+  emailTo?: string | null;
+  emailCc?: string | null;
 };
 
 /** 從環境變數或本機預設取得 Scheduler API 根 URL（不含尾端斜線）。 */
@@ -90,10 +104,12 @@ async function scheduleFetch<T>(
   return res.json() as Promise<T>;
 }
 
-/** 依 userId 列出該使用者的所有排程。 */
+/** 依 userId 列出該使用者的所有排程（業務 API 統一 POST）。 */
 export function listSchedules(userId: string): Promise<ScheduleDto[]> {
-  const q = new URLSearchParams({ userId });
-  return scheduleFetch<ScheduleDto[]>(`/api/schedules?${q}`);
+  return scheduleFetch<ScheduleDto[]>("/api/schedules/list", {
+    method: "POST",
+    body: JSON.stringify({ userId }),
+  });
 }
 
 /** 建立一筆新排程。 */
@@ -111,15 +127,15 @@ export function patchSchedule(
   id: string,
   body: PatchSchedulePayload,
 ): Promise<ScheduleDto> {
-  return scheduleFetch<ScheduleDto>(`/api/schedules/${id}`, {
-    method: "PATCH",
+  return scheduleFetch<ScheduleDto>(`/api/schedules/${id}/patch`, {
+    method: "POST",
     body: JSON.stringify(body),
   });
 }
 
 /** 刪除排程。 */
 export function deleteSchedule(id: string): Promise<void> {
-  return scheduleFetch<void>(`/api/schedules/${id}`, { method: "DELETE" });
+  return scheduleFetch<void>(`/api/schedules/${id}/delete`, { method: "POST" });
 }
 
 /** 立即觸發一次排程執行（非等到 nextRunAt）。 */
@@ -131,5 +147,7 @@ export function runScheduleNow(id: string): Promise<ScheduleRunDto> {
 
 /** 查詢某排程的執行紀錄列表。 */
 export function listScheduleRuns(id: string): Promise<ScheduleRunDto[]> {
-  return scheduleFetch<ScheduleRunDto[]>(`/api/schedules/${id}/runs`);
+  return scheduleFetch<ScheduleRunDto[]>(`/api/schedules/${id}/runs/list`, {
+    method: "POST",
+  });
 }

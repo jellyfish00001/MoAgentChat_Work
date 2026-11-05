@@ -71,6 +71,9 @@ public sealed class ScheduleService
         if (req.TimeOfDay is not null) s.TimeOfDay = req.TimeOfDay;
         if (req.Weekday is not null) s.Weekday = req.Weekday;
         if (req.IntervalHours is not null) s.IntervalHours = req.IntervalHours;
+        if (req.NotifyEnabled is not null) s.NotifyEnabled = req.NotifyEnabled.Value;
+        if (req.EmailTo is not null) s.EmailTo = NormalizeAddresses(req.EmailTo);
+        if (req.EmailCc is not null) s.EmailCc = NormalizeAddresses(req.EmailCc);
         s.UpdatedAt = DateTimeOffset.UtcNow;
         s.NextRunAt = NextRunCalculator.ComputeNext(
             s.Kind, DateTimeOffset.UtcNow, s.TimeOfDay, s.Weekday, s.IntervalHours);
@@ -93,7 +96,7 @@ public sealed class ScheduleService
     {
         var runs = await _repo.ListRunsAsync(scheduleId, ct);
         return runs.Select(r => new ScheduleRunDto(
-            r.Id, r.ScheduleId, r.Status, r.ThreadId, r.Error, r.StartedAt, r.FinishedAt)).ToList();
+            r.Id, r.ScheduleId, r.Status, r.ThreadId, r.Error, r.NotifyOutcome, r.StartedAt, r.FinishedAt)).ToList();
     }
 
     /// <summary>組裝實體列（公開與公司建立共用）。</summary>
@@ -113,6 +116,9 @@ public sealed class ScheduleService
             TimeOfDay = req.TimeOfDay,
             Weekday = req.Weekday,
             IntervalHours = req.IntervalHours,
+            NotifyEnabled = req.NotifyEnabled,
+            EmailTo = NormalizeAddresses(req.EmailTo),
+            EmailCc = NormalizeAddresses(req.EmailCc),
             Enabled = true,
             CreatedAt = now,
             UpdatedAt = now,
@@ -128,7 +134,16 @@ public sealed class ScheduleService
         var last = await _repo.GetLatestRunAsync(s.Id, ct);
         return new ScheduleDto(
             s.Id, s.UserId, s.Scope, s.Title, s.Prompt, s.AssistantId, s.ApiUrl, s.Kind,
-            s.TimeOfDay, s.Weekday, s.IntervalHours, s.Enabled, s.NextRunAt, s.LastRunAt,
-            last?.ThreadId);
+            s.TimeOfDay, s.Weekday, s.IntervalHours, s.Enabled,
+            s.NotifyEnabled, s.EmailTo, s.EmailCc,
+            s.NextRunAt, s.LastRunAt, last?.ThreadId);
+    }
+
+    /// <summary>正規化 To／Cc：trim；空白則存 null。</summary>
+    static string? NormalizeAddresses(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var trimmed = raw.Trim();
+        return trimmed.Length == 0 ? null : trimmed;
     }
 }

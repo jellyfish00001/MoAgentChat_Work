@@ -17,6 +17,12 @@ public sealed class Schedule
     public int? IntervalHours { get; set; }
     public string TimeZone { get; set; } = "Asia/Taipei";
     public bool Enabled { get; set; } = true;
+    /// <summary>是否在執行結束後走通知管線（實際發送與否由 Notification:Mode 決定）。</summary>
+    public bool NotifyEnabled { get; set; }
+    /// <summary>收件者 To（逗號或分號分隔多位）；NotifyEnabled 時必填才會寄。</summary>
+    public string? EmailTo { get; set; }
+    /// <summary>副本 Cc（逗號或分號分隔多位）；可空。</summary>
+    public string? EmailCc { get; set; }
     public DateTimeOffset NextRunAt { get; set; }
     public DateTimeOffset? LastRunAt { get; set; }
     public DateTimeOffset CreatedAt { get; set; }

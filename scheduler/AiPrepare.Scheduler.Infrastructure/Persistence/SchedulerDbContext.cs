@@ -26,12 +26,15 @@ public sealed class SchedulerDbContext : DbContext
             e.Property(x => x.AssistantId).HasMaxLength(128);
             e.Property(x => x.ApiUrl).HasMaxLength(512);
             e.Property(x => x.TimeZone).HasMaxLength(64);
+            e.Property(x => x.EmailTo).HasMaxLength(1024);
+            e.Property(x => x.EmailCc).HasMaxLength(1024);
         });
         modelBuilder.Entity<ScheduleRun>(e =>
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.ScheduleId);
             e.Property(x => x.ThreadId).HasMaxLength(128);
+            e.Property(x => x.NotifyOutcome).HasMaxLength(512);
         });
     }
 }

@@ -5,4 +5,4 @@
 - DB：`D:\ai_prepare_data\schedules.sqlite`（`SCHEDULE_DB_PATH`）
 - 執行依賴本機 LangGraph `:2024`（`assistantId=agent`）
 
-維運：Dashboard Succeeded／Failed、`GET /api/schedules/{id}/runs`、結構化日誌。細節見 Agent guide（`.cursor`，不進版控）。
+維運：Dashboard Succeeded／Failed、`POST /api/schedules/{id}/runs/list`、結構化日誌。業務 API 統一 POST。細節見 Agent guide（`.cursor`，不進版控）。

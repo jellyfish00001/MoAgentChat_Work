@@ -36,6 +36,14 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EmailCc")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("EmailTo")
+                        .HasMaxLength(1024)
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("Enabled")
                         .HasColumnType("INTEGER");
 
@@ -50,6 +58,9 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset>("NextRunAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("NotifyEnabled")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Prompt")
                         .IsRequired()
@@ -103,6 +114,10 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTimeOffset?>("FinishedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NotifyOutcome")
+                        .HasMaxLength(512)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("ScheduleId")
