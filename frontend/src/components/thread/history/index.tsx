@@ -18,6 +18,12 @@ import { PanelRightOpen, PanelRightClose } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { GraphSwitcher } from "../graph-switcher";
 import { Separator } from "@/components/ui/separator";
+import { ScheduleSidebar } from "@/components/schedule/ScheduleSidebar";
+import { ScheduleBadge } from "@/components/schedule/ScheduleBadge";
+import {
+  getScheduleTitleFromThread,
+  isScheduleThread,
+} from "@/lib/schedule-thread-meta";
 
 function ThreadList({
   threads,
@@ -45,6 +51,11 @@ function ThreadList({
           itemText = getContentString(firstMessage.content);
         }
         const selected = t.thread_id === threadId;
+        // [ai_prepare] 排程 thread 顯示 badge 與 metadata 標題
+        const scheduleThread = isScheduleThread(t);
+        const scheduleTitle = scheduleThread
+          ? getScheduleTitleFromThread(t)
+          : undefined;
         return (
           <div
             key={t.thread_id}
@@ -53,7 +64,7 @@ function ThreadList({
             <Button
               variant="ghost"
               className={cn(
-                "w-[280px] items-start justify-start rounded-xl border-l-2 text-left font-normal",
+                "h-auto w-[280px] items-start justify-start rounded-xl border-l-2 py-2 text-left font-normal",
                 selected
                   ? "border-accent bg-muted text-foreground"
                   : "border-transparent",
@@ -65,7 +76,15 @@ function ThreadList({
                 stream.switchThread(t.thread_id);
               }}
             >
-              <p className="truncate text-ellipsis">{itemText}</p>
+              <div className="flex min-w-0 flex-col items-start gap-1">
+                {scheduleThread ? <ScheduleBadge /> : null}
+                <p className="w-full truncate text-ellipsis">{itemText}</p>
+                {scheduleTitle ? (
+                  <p className="text-muted-foreground w-full truncate text-[11px]">
+                    {scheduleTitle}
+                  </p>
+                ) : null}
+              </div>
             </Button>
           </div>
         );
@@ -145,6 +164,8 @@ export default function ThreadHistory() {
           </h1>
         </div>
         <GraphSwitcher compact />
+        {/* [ai_prepare] 桌面側欄：排程管理 */}
+        <ScheduleSidebar compact />
         <Separator className="bg-sidebar-border mx-3 w-auto" />
         <div className="text-muted-foreground w-full px-4 text-xs font-medium tracking-wide uppercase">
           Threads
@@ -174,6 +195,8 @@ export default function ThreadHistory() {
                 <SheetTitle>Thread History</SheetTitle>
               </SheetHeader>
               <GraphSwitcher />
+              {/* [ai_prepare] 行動版 Sheet 內排程區塊 */}
+              <ScheduleSidebar />
               <Separator />
               <ThreadList
                 threads={threads}

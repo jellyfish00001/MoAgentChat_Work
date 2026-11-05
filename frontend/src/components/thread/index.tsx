@@ -45,6 +45,11 @@ import { OceanSettings } from "@/components/ocean-settings";
 import type { SharkSpec } from "@/lib/ascii-sharks";
 import { ContentBlocksPreview } from "./ContentBlocksPreview";
 import { Textarea } from "../ui/textarea";
+import { useScheduleComposer } from "@/hooks/useScheduleComposer";
+import { ScheduleConfirmCard } from "@/components/schedule/ScheduleConfirmCard";
+import { ScheduleThreadHeader } from "@/components/schedule/ScheduleThreadHeader";
+import { ScheduleKind } from "@/lib/schedule-api";
+import type { ScheduleDraft } from "@/lib/scheduleDraftParser";
 
 // [ai_prepare 修改] 依數量／體型／速度產生鯊魚陣容（classic，大小交錯，決定性不閃爍）
 function buildSharkRoster(
@@ -181,6 +186,29 @@ export function Thread() {
   const messages = stream.messages;
   const isLoading = stream.isLoading;
 
+  // [ai_prepare] 自然語句排程：攔截 submit、顯示確認卡而非直接送訊息
+  const scheduleComposer = useScheduleComposer({
+    assistantId: assistantId || process.env.NEXT_PUBLIC_ASSISTANT_ID || "agent",
+    apiUrl: stream.apiUrl,
+    envApiUrl: process.env.NEXT_PUBLIC_API_URL,
+  });
+  // 驗收用：?scheduleConfirmPreview=1 顯示靜態確認卡（不寫庫、不送訊）
+  const [scheduleConfirmPreview] = useQueryState(
+    "scheduleConfirmPreview",
+    parseAsBoolean.withDefault(false),
+  );
+  const previewDraft: ScheduleDraft | null = scheduleConfirmPreview
+    ? {
+        title: "檢查排程側欄",
+        prompt: "檢查排程側欄",
+        kind: ScheduleKind.Daily,
+        timeOfDay: "09:00:00",
+        weekday: null,
+        intervalHours: null,
+        summary: "每日 09:00 · 檢查排程側欄",
+      }
+    : null;
+
   const lastError = useRef<string | undefined>(undefined);
 
   const setThreadId = (id: string | null) => {
@@ -237,6 +265,8 @@ export function Thread() {
     e.preventDefault();
     if ((input.trim().length === 0 && contentBlocks.length === 0) || isLoading)
       return;
+    // 辨識排程意圖時改走確認流程
+    if (scheduleComposer.tryIntercept(input, contentBlocks.length)) return;
     setFirstTokenReceived(false);
 
     const newHumanMessage: Message = {
@@ -393,6 +423,12 @@ export function Thread() {
                   </motion.button>
                   {/* [ai_prepare 修改] 標示目前所屬 LangGraph */}
                   <CurrentGraphBadge />
+                  {/* [ai_prepare] 排程執行產生的 thread 顯示標題 */}
+                  <ScheduleThreadHeader
+                    apiUrl={stream.apiUrl}
+                    envApiUrl={process.env.NEXT_PUBLIC_API_URL}
+                    authScheme={process.env.NEXT_PUBLIC_AUTH_SCHEME}
+                  />
                   <ConnectedHost apiUrl={stream.apiUrl} />
                 </>
               )}
@@ -487,6 +523,24 @@ export function Thread() {
                   )}
 
                   <ScrollToBottom className="animate-in fade-in-0 zoom-in-95 absolute bottom-full left-1/2 mb-4 -translate-x-1/2" />
+
+                  {/* [ai_prepare] 排程草稿確認（取代一般輸入送出；preview 僅視覺驗收） */}
+                  {scheduleComposer.draft || previewDraft ? (
+                    <ScheduleConfirmCard
+                      draft={scheduleComposer.draft ?? previewDraft!}
+                      creating={scheduleComposer.creating}
+                      onCancel={
+                        scheduleComposer.draft
+                          ? scheduleComposer.cancelDraft
+                          : () => undefined
+                      }
+                      onConfirm={async () => {
+                        if (!scheduleComposer.draft) return;
+                        const ok = await scheduleComposer.confirmDraft();
+                        if (ok) setInput("");
+                      }}
+                    />
+                  ) : null}
 
                   <div
                     ref={dropRef}
