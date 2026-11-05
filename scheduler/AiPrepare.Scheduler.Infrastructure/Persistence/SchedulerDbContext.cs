@@ -19,6 +19,7 @@ public sealed class SchedulerDbContext : DbContext
         {
             e.HasKey(x => x.Id);
             e.HasIndex(x => new { x.Enabled, x.NextRunAt });
+            e.HasIndex(x => new { x.Scope, x.Enabled, x.NextRunAt });
             e.HasIndex(x => x.UserId);
             e.Property(x => x.Title).HasMaxLength(200);
             e.Property(x => x.UserId).HasMaxLength(128);

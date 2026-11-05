@@ -15,7 +15,7 @@ var hangfirePass = builder.Configuration["hangfire:password"]
     ?? Environment.GetEnvironmentVariable("HANGFIRE_PASSWORD")
     ?? "admin";
 
-builder.Services.AddSchedulerCore(sqlitePath);
+builder.Services.AddSchedulerCore(sqlitePath, builder.Configuration);
 builder.Services.AddHangfire(c => c
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()

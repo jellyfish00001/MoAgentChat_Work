@@ -6,9 +6,16 @@ export enum ScheduleKind {
   EveryNHours = 2,
 }
 
+/** 與後端 ScheduleScope 對齊：0=個人、1=公司（一般列表不會出現公司）。 */
+export enum ScheduleScope {
+  User = 0,
+  Company = 1,
+}
+
 export type ScheduleDto = {
   id: string;
   userId: string;
+  scope: ScheduleScope;
   title: string;
   prompt: string;
   assistantId: string;

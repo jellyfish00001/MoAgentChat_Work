@@ -2,7 +2,7 @@ using AiPrepare.Scheduler.Domain;
 
 namespace AiPrepare.Scheduler.Application.Dtos;
 
-/// <summary>建立排程請求。</summary>
+/// <summary>建立排程請求（公開 API 一律建成 Scope=User）。</summary>
 public sealed record CreateScheduleRequest(
     string UserId,
     string Title,
@@ -24,10 +24,11 @@ public sealed record PatchScheduleRequest(
     DayOfWeek? Weekday,
     int? IntervalHours);
 
-/// <summary>排程 API 回應（含最近 thread）。</summary>
+/// <summary>排程 API 回應（含最近 thread 與 Scope）。</summary>
 public sealed record ScheduleDto(
     Guid Id,
     string UserId,
+    ScheduleScope Scope,
     string Title,
     string Prompt,
     string AssistantId,

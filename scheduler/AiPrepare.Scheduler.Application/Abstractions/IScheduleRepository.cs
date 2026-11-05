@@ -8,8 +8,11 @@ public interface IScheduleRepository
     /// <summary>依 Id 取得排程。</summary>
     Task<Schedule?> GetAsync(Guid id, CancellationToken ct = default);
 
-    /// <summary>依使用者列出排程。</summary>
+    /// <summary>依使用者列出個人排程（僅 Scope=User）。</summary>
     Task<IReadOnlyList<Schedule>> ListByUserAsync(string userId, CancellationToken ct = default);
+
+    /// <summary>列出全部公司排程（Scope=Company）。</summary>
+    Task<IReadOnlyList<Schedule>> ListCompanyAsync(CancellationToken ct = default);
 
     /// <summary>新增排程。</summary>
     Task AddAsync(Schedule schedule, CancellationToken ct = default);
@@ -20,8 +23,11 @@ public interface IScheduleRepository
     /// <summary>刪除排程。</summary>
     Task DeleteAsync(Guid id, CancellationToken ct = default);
 
-    /// <summary>列出到期且啟用的排程。</summary>
-    Task<IReadOnlyList<Schedule>> ListDueAsync(DateTimeOffset untilUtc, CancellationToken ct = default);
+    /// <summary>列出到期且啟用的排程；includeCompany=false 時略過公司列。</summary>
+    Task<IReadOnlyList<Schedule>> ListDueAsync(
+        DateTimeOffset untilUtc,
+        bool includeCompany,
+        CancellationToken ct = default);
 
     /// <summary>取得單筆執行紀錄。</summary>
     Task<ScheduleRun?> GetRunAsync(Guid runId, CancellationToken ct = default);

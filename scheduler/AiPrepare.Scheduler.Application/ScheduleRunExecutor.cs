@@ -1,6 +1,7 @@
 using AiPrepare.Scheduler.Application.Abstractions;
 using AiPrepare.Scheduler.Domain;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace AiPrepare.Scheduler.Application;
 
@@ -9,23 +10,27 @@ public sealed class ScheduleRunExecutor : IScheduleRunExecutor
 {
     private readonly IScheduleRepository _repo;
     private readonly ILangGraphClient _lg;
+    private readonly IOptions<CompanySchedulesOptions> _companyOpts;
     private readonly ILogger<ScheduleRunExecutor> _log;
 
-    /// <summary>注入仓储、LangGraph 客戶端與結構化日誌。</summary>
+    /// <summary>注入仓储、LangGraph、公司掃描開關與結構化日誌。</summary>
     public ScheduleRunExecutor(
         IScheduleRepository repo,
         ILangGraphClient lg,
+        IOptions<CompanySchedulesOptions> companyOpts,
         ILogger<ScheduleRunExecutor> log)
     {
         _repo = repo;
         _lg = lg;
+        _companyOpts = companyOpts;
         _log = log;
     }
 
-    /// <summary>掃描到期排程並逐筆 Execute；回傳處理筆數。</summary>
+    /// <summary>掃描到期排程並逐筆 Execute；公司列受 CompanySchedules:Enabled 控制。</summary>
     public async Task<int> ProcessDueAsync(DateTimeOffset untilUtc, CancellationToken ct = default)
     {
-        var due = await _repo.ListDueAsync(untilUtc, ct);
+        var includeCompany = _companyOpts.Value.Enabled;
+        var due = await _repo.ListDueAsync(untilUtc, includeCompany, ct);
         var n = 0;
         foreach (var s in due)
         {
@@ -35,7 +40,7 @@ public sealed class ScheduleRunExecutor : IScheduleRunExecutor
         return n;
     }
 
-    /// <summary>執行單一排程一次（新 thread）。</summary>
+    /// <summary>執行單一排程一次（新 thread）；不受公司掃描開關影響。</summary>
     public async Task<ScheduleRun> ExecuteAsync(Guid scheduleId, CancellationToken ct = default)
     {
         var schedule = await _repo.GetAsync(scheduleId, ct)

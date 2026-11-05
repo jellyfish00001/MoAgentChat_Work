@@ -2,6 +2,7 @@ using AiPrepare.Scheduler.Application;
 using AiPrepare.Scheduler.Application.Abstractions;
 using AiPrepare.Scheduler.Application.Dtos;
 using AiPrepare.Scheduler.Infrastructure;
+using Microsoft.Extensions.Options;
 
 // 極薄 API 宿主：只做 CORS／JobKey／轉呼叫 Application。
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +14,7 @@ var jobKey = builder.Configuration["JOB_KEY"]
     ?? Environment.GetEnvironmentVariable("SCHEDULE_JOB_KEY")
     ?? "dev-job-key";
 
-builder.Services.AddSchedulerCore(sqlitePath);
+builder.Services.AddSchedulerCore(sqlitePath, builder.Configuration);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod()));
 
@@ -25,11 +26,11 @@ app.UseCors();
 /// <summary>健康檢查（含 DB 路徑，不含機密）。</summary>
 app.MapGet("/health", () => Results.Ok(new { ok = true, db = sqlitePath }));
 
-/// <summary>列出使用者排程。</summary>
+/// <summary>列出使用者個人排程（不含公司 Scope）。</summary>
 app.MapGet("/api/schedules", async (string userId, ScheduleService svc, CancellationToken ct) =>
     Results.Ok(await svc.ListAsync(userId, ct)));
 
-/// <summary>建立排程。</summary>
+/// <summary>建立個人排程（強制 Scope=User）。</summary>
 app.MapPost("/api/schedules", async (CreateScheduleRequest body, ScheduleService svc, CancellationToken ct) =>
 {
     var dto = await svc.CreateAsync(body, ct);
@@ -61,7 +62,7 @@ app.MapDelete("/api/schedules/{id:guid}", async (Guid id, ScheduleService svc, C
 app.MapGet("/api/schedules/{id:guid}/runs", async (Guid id, ScheduleService svc, CancellationToken ct) =>
     Results.Ok(await svc.ListRunsAsync(id, ct)));
 
-/// <summary>立刻執行一次（與 Job 共用 IScheduleRunExecutor）。</summary>
+/// <summary>立刻執行一次（與 Job 共用 IScheduleRunExecutor；含公司列）。</summary>
 app.MapPost("/api/schedules/{id:guid}/run-now", async (Guid id, IScheduleRunExecutor exec, CancellationToken ct) =>
 {
     var run = await exec.ExecuteAsync(id, ct);
@@ -69,13 +70,32 @@ app.MapPost("/api/schedules/{id:guid}/run-now", async (Guid id, IScheduleRunExec
         run.Id, run.ScheduleId, run.Status, run.ThreadId, run.Error, run.StartedAt, run.FinishedAt));
 });
 
-/// <summary>內部：列出即將到期（需 X-Job-Key）。</summary>
-app.MapGet("/api/internal/schedules/due", async (HttpRequest req, ScheduleService svc, CancellationToken ct) =>
+/// <summary>內部：列出公司排程（需 X-Job-Key）。</summary>
+app.MapGet("/api/internal/schedules/company", async (HttpRequest req, ScheduleService svc, CancellationToken ct) =>
+{
+    if (!CheckJobKey(req, jobKey)) return Results.Unauthorized();
+    return Results.Ok(await svc.ListCompanyAsync(ct));
+});
+
+/// <summary>內部：建立公司排程（需 X-Job-Key；Scope=Company）。</summary>
+app.MapPost("/api/internal/schedules/company", async (HttpRequest req, CreateScheduleRequest body, ScheduleService svc, CancellationToken ct) =>
+{
+    if (!CheckJobKey(req, jobKey)) return Results.Unauthorized();
+    var dto = await svc.CreateCompanyAsync(body, ct);
+    return Results.Created($"/api/schedules/{dto.Id}", dto);
+});
+
+/// <summary>內部：列出即將到期（需 X-Job-Key；尊重公司掃描開關）。</summary>
+app.MapGet("/api/internal/schedules/due", async (
+    HttpRequest req,
+    ScheduleService svc,
+    IOptions<CompanySchedulesOptions> companyOpts,
+    CancellationToken ct) =>
 {
     if (!CheckJobKey(req, jobKey)) return Results.Unauthorized();
     var until = DateTimeOffset.UtcNow.AddMinutes(1);
-    var due = await svc.ListDueEntitiesAsync(until, ct);
-    return Results.Ok(due.Select(s => new { s.Id, s.Title, s.NextRunAt }));
+    var due = await svc.ListDueEntitiesAsync(until, companyOpts.Value.Enabled, ct);
+    return Results.Ok(due.Select(s => new { s.Id, s.Title, s.Scope, s.NextRunAt }));
 });
 
 /// <summary>內部：觸發 due 掃描（需 X-Job-Key；除錯用）。</summary>
