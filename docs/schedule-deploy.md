@@ -34,30 +34,21 @@ flowchart TD
 
 ## 流程圖（叢集內誰連誰）
 
-```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 45, "rankSpacing": 80, "padding": 20}}}%%
-flowchart TD
-  Ui[Chat UI／前端]
-  ApiPod[Deployment：Scheduler Api]
-  JobPod[Deployment：Scheduler Job]
-  Cfg[ConfigMap：CompanySchedules／Notification.Mode]
-  Sec[Secret：DB、JobKey、Hangfire、InvokeUrl]
-  PG[(PostgreSQL 排程庫)]
-  LG[LangGraph Agent Server]
-  Logic[Azure Logic App 通知]
-  Draft[本機／Draft：只寫 log]
+上→下單欄；草稿／正式通知、公司掃描開關等細節見圖下，不塞進圖裡。
 
-  Ui -->|HTTPS CRUD／run-now| ApiPod
-  JobPod -->|每分鐘掃到期| PG
-  ApiPod -->|讀寫排程與 Runs| PG
-  JobPod --> LG
-  ApiPod -->|run-now 時| LG
-  JobPod -->|NotifyEnabled 且 Mode=Http| Logic
-  JobPod -->|Mode=Draft 預設| Draft
-  ApiPod -->|run-now 同管線| Draft
-  Cfg --> JobPod
-  Sec --> ApiPod
-  Sec --> JobPod
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 8, "useMaxWidth": true}}}%%
+flowchart TD
+  Ui[聊天前端] -->|建立／列表／立刻執行| Api[排程 Api 服務]
+  Job[排程 Job 服務]
+  Api --> Db[(排程資料庫)]
+  Job -->|每分鐘掃到期| Db
+  Api --> Agent[Agent 服務]
+  Job -->|到期執行| Agent
+  Api --> Mail[郵件通知]
+  Job --> Mail
+  Cfg[設定與機密] --> Api
+  Cfg --> Job
 ```
 
 ---

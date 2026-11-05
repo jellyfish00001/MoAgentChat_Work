@@ -10,26 +10,34 @@
 
 ## 流程圖（建立與列表）
 
-使用者在 UI 操作時，API 只負責把「排程定義」寫進／讀出資料庫；此時**還不會**跑 AI、也**不會**寄信。
+使用者在 UI 操作時，API 只負責把「排程定義」寫進／讀出資料庫；此時**還不會**跑 AI、也**不會**寄信。  
+業務 API 一律 POST；下面**兩支路徑用途不同**（一寫一讀）。
+
+### POST ① 建立排程（寫入）
+
+按「建立／儲存」→ 新增一列 `Schedules`（含 Prompt、週期、To／Cc）。
 
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 40, "rankSpacing": 70, "padding": 16}}}%%
-flowchart TD
-  User[使用者打開排程側欄]
-  Form[填標題_Prompt_週期_To_Cc]
-  PostCreate["POST /api/schedules"]
-  PostList["POST /api/schedules/list"]
-  Svc[ScheduleService]
-  DbSched[(表 Schedules)]
-
-  User --> Form
-  Form --> PostCreate
-  Form --> PostList
-  PostCreate --> Svc
-  PostList --> Svc
-  Svc -->|"新建：Scope=User、算 NextRunAt、可選 Notify"| DbSched
-  Svc -->|"列表：body.userId、只回 Scope=User"| DbSched
+%%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "padding": 12, "useMaxWidth": true}}}%%
+flowchart LR
+  A[填表：標題／Prompt／週期／To／Cc] --> B["POST /api/schedules"]
+  B --> C[ScheduleService.Create]
+  C --> D[(Schedules 新增一列)]
 ```
+
+### POST ② 列出排程（查詢）
+
+打開側欄或刷新 → 依 body 的 `userId` **只讀**個人排程；**不會**新建列。
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "padding": 12, "useMaxWidth": true}}}%%
+flowchart LR
+  A[打開側欄／刷新] --> B["POST /api/schedules/list"]
+  B --> C[ScheduleService.List]
+  C --> D[(Schedules 依 userId 查詢)]
+```
+
+為什麼列表也是 POST：專案約定查詢也走 POST（`userId` 放 body）；路徑是 `/list`，與①的 `/api/schedules` 不同，不會互相覆蓋。
 
 ---
 

@@ -41,30 +41,46 @@ flowchart TD
 
 ## 流程圖（執行期資料怎麼流動）
 
+採**上→下單欄**（子圖 `direction TB`），避免多源橫向匯流把圖拉寬、預覽壓縮到看不清。共三段。
+
+### 1. 誰寫入 `Schedules`
+
 ```mermaid
-%%{init: {"flowchart": {"nodeSpacing": 45, "rankSpacing": 75, "padding": 20}}}%%
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 8, "useMaxWidth": true}}}%%
 flowchart TD
-  S[(Schedules 排程定義含 To_Cc)]
-  R[(ScheduleRuns 執行與通知摘要)]
+  subgraph W1["寫入端"]
+    direction TB
+    UiWrite[使用者 API 建立／修改 · Scope=User]
+    CoWrite[內部 API 建公司排程 · Scope=Company]
+    Scan[Job 掃到期並認領 · 讀寫 NextRunAt]
+    ExecLast[Executor 結束 · 寫 LastRunAt]
+    UiWrite --> CoWrite --> Scan --> ExecLast
+  end
+  ExecLast --> S[(Schedules)]
+```
 
-  UiWrite[使用者 API 建立／修改]
-  CoWrite[內部 API 建公司排程]
-  Scan[Job 掃到期並認領]
+### 2. 誰寫入 `ScheduleRuns`（含通知）
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 8, "useMaxWidth": true}}}%%
+flowchart TD
   Exec[Executor 跑 LangGraph]
-  Notify[INotificationSender Draft／日後 Http]
-  UiRead[使用者列表／徽章]
-  CoRead[維運列表公司排程]
+  Exec -->|Running／結果／threadId| R[(ScheduleRuns)]
+  Exec --> Notify[INotificationSender · Draft]
+  Notify -->|NotifyOutcome| R
+```
 
-  UiWrite -->|Scope=User| S
-  CoWrite -->|Scope=Company| S
-  Scan -->|讀 NextRunAt、寫新 NextRunAt| S
-  Exec -->|寫 Running／結果／threadId| R
-  Exec -->|NotifyEnabled| Notify
-  Notify -->|寫 NotifyOutcome| R
-  Exec -->|寫 LastRunAt| S
-  UiRead -->|過濾 Scope=User| S
-  UiRead --> R
-  CoRead -->|Scope=Company| S
+### 3. 誰讀這兩張表
+
+```mermaid
+%%{init: {"flowchart": {"nodeSpacing": 20, "rankSpacing": 32, "padding": 8, "useMaxWidth": true}}}%%
+flowchart TD
+  UiRead[使用者列表／徽章 · Scope=User]
+  CoRead[維運列表公司排程 · Scope=Company]
+  UiRead --> CoRead
+  UiRead --> S[(Schedules)]
+  CoRead --> S
+  S --> R[(ScheduleRuns · 側欄／徽章亦讀)]
 ```
 
 ---
