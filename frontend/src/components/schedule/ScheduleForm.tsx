@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { SelectField } from "@/components/ui/select-field";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import {
   createSchedule,
   patchSchedule,
@@ -151,99 +153,103 @@ export function ScheduleForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn("flex flex-col gap-3", className)}
+      className={cn("flex min-h-0 min-w-0 flex-col gap-3", className)}
     >
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="schedule-title">標題</Label>
-        <Input
-          id="schedule-title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="排程名稱"
-          className="h-9 text-sm"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="schedule-prompt">提示內容</Label>
-        <Textarea
-          id="schedule-prompt"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="執行時送給 Agent 的提示"
-          rows={3}
-          className="min-h-0 resize-none text-sm"
-        />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="schedule-kind">週期</Label>
-        <select
-          id="schedule-kind"
-          value={kind}
-          onChange={(e) => setKind(Number(e.target.value) as ScheduleKind)}
-          className="border-input bg-background text-foreground h-9 w-full rounded-md border px-2 text-sm"
-        >
-          <option value={ScheduleKind.Daily}>每日</option>
-          <option value={ScheduleKind.Weekly}>每週</option>
-          <option value={ScheduleKind.EveryNHours}>每 N 小時</option>
-        </select>
-      </div>
-      {kind !== ScheduleKind.EveryNHours && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="schedule-time">時間</Label>
+      {/* 可捲區：小視窗時欄位不撐破 Dialog；底部按鈕固定可見 */}
+      <div className="scrollbar-ocean flex min-h-0 min-w-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain pr-0.5">
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <Label htmlFor="schedule-title">標題</Label>
           <Input
-            id="schedule-time"
-            type="time"
-            value={timeOfDay}
-            onChange={(e) => setTimeOfDay(e.target.value)}
-            className="h-9 text-sm"
+            id="schedule-title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="排程名稱"
+            className="h-9 min-w-0 max-w-full text-sm"
           />
         </div>
-      )}
-      {kind === ScheduleKind.Weekly && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="schedule-weekday">星期</Label>
-          <select
-            id="schedule-weekday"
-            value={weekday}
-            onChange={(e) => setWeekday(Number(e.target.value))}
-            className="border-input bg-background h-9 w-full rounded-md border px-2 text-sm"
-          >
-            {WEEKDAYS.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-      {kind === ScheduleKind.EveryNHours && (
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="schedule-interval">間隔（小時）</Label>
-          <Input
-            id="schedule-interval"
-            type="number"
-            min={1}
-            max={168}
-            value={intervalHours}
-            onChange={(e) => setIntervalHours(Number(e.target.value))}
-            className="h-9 text-sm"
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <Label htmlFor="schedule-prompt" className="shrink-0">
+            提示內容
+          </Label>
+          <Textarea
+            id="schedule-prompt"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="執行時送給 Agent 的提示（可寫較長內容）"
+            rows={4}
+            className="field-sizing-fixed max-h-[min(28dvh,12rem)] min-h-[4.5rem] w-full min-w-0 resize-y text-sm leading-relaxed"
           />
         </div>
-      )}
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
-        <div className="min-w-0">
-          <p className="text-sm font-medium">暫不執行</p>
-          <p className="text-muted-foreground text-xs">
-            開啟後排程不會自動跑，可稍後再開
-          </p>
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <Label htmlFor="schedule-kind">週期</Label>
+          <SelectField
+            id="schedule-kind"
+            aria-label="週期"
+            value={String(kind)}
+            onChange={(v) => setKind(Number(v) as ScheduleKind)}
+            options={[
+              { value: String(ScheduleKind.Daily), label: "每日" },
+              { value: String(ScheduleKind.Weekly), label: "每週" },
+              { value: String(ScheduleKind.EveryNHours), label: "每 N 小時" },
+            ]}
+          />
         </div>
-        <Switch
-          checked={paused}
-          onCheckedChange={setPaused}
-          aria-label="暫不執行"
-        />
+        {kind !== ScheduleKind.EveryNHours && (
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Label htmlFor="schedule-time">時間</Label>
+            <Input
+              id="schedule-time"
+              type="time"
+              value={timeOfDay}
+              onChange={(e) => setTimeOfDay(e.target.value)}
+              className="h-9 w-full min-w-0 max-w-full text-sm"
+            />
+          </div>
+        )}
+        {kind === ScheduleKind.Weekly && (
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Label htmlFor="schedule-weekday">星期</Label>
+            <SelectField
+              id="schedule-weekday"
+              aria-label="星期"
+              value={String(weekday)}
+              onChange={(v) => setWeekday(Number(v))}
+              options={WEEKDAYS.map((d) => ({
+                value: String(d.value),
+                label: d.label,
+              }))}
+            />
+          </div>
+        )}
+        {kind === ScheduleKind.EveryNHours && (
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Label htmlFor="schedule-interval">間隔（小時）</Label>
+            <NumberStepper
+              id="schedule-interval"
+              aria-label="間隔（小時）"
+              min={1}
+              max={168}
+              value={intervalHours}
+              onChange={setIntervalHours}
+            />
+          </div>
+        )}
+        <div className="border-border flex shrink-0 items-center justify-between gap-3 rounded-xl border px-3 py-2.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">暫不執行</p>
+            <p className="text-muted-foreground text-xs break-words">
+              開啟後排程不會自動跑，可稍後再開
+            </p>
+          </div>
+          <Switch
+            checked={paused}
+            onCheckedChange={setPaused}
+            aria-label="暫不執行"
+            className="shrink-0"
+          />
+        </div>
       </div>
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="bg-background flex shrink-0 justify-end gap-2 pt-2">
         {onCancel ? (
           <Button
             type="button"

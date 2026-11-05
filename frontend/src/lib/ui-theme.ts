@@ -1,9 +1,13 @@
-/** Wistron UI themes — driven by CSS semantic tokens on `html[data-theme]`. */
+/**
+ * Wistron UI themes — 唯一主題入口。
+ * 色票／語意色只改 `globals.css` 的 `[data-theme=…]`；元件用 `bg-panel` 等 class，勿散落 hex。
+ */
 
 export type UiTheme = "wistron-dark" | "wistron-light";
 
 export const UI_THEME_KEY = "ai_prepare.ui_theme";
-export const DEFAULT_UI_THEME: UiTheme = "wistron-dark";
+/** 新使用者預設：明亮主題（與 aipark-frontend-ui 約定一致）。 */
+export const DEFAULT_UI_THEME: UiTheme = "wistron-light";
 
 export const UI_THEMES: {
   value: UiTheme;
@@ -29,8 +33,8 @@ export function migrateLegacyTheme(raw: unknown): UiTheme {
   if (raw === "wistron-light") return "wistron-light";
   if (raw === "dark") return "wistron-dark";
   if (raw === "light") return "wistron-light";
-  // Former classic / wistron → dark default
-  if (raw === "wistron-classic" || raw === "wistron") return "wistron-dark";
+  // 舊 classic／wistron → Light（對齊預設）
+  if (raw === "wistron-classic" || raw === "wistron") return "wistron-light";
   return DEFAULT_UI_THEME;
 }
 

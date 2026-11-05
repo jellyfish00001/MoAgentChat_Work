@@ -10,7 +10,7 @@ import {
 import { ScheduleForm } from "./ScheduleForm";
 import type { ScheduleDto } from "@/lib/schedule-api";
 
-/** 新增／編輯排程的置中彈窗。 */
+/** 新增／編輯排程的置中彈窗（寬高跟視窗比例，絕不超出可視區）。 */
 export function ScheduleDialog({
   open,
   onOpenChange,
@@ -42,8 +42,13 @@ export function ScheduleDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent
+        className={
+          // 覆蓋預設：用 100dvh／100vw 扣邊距；min-h-0＋內部捲動，避免小視窗底部被裁
+          "flex !h-auto max-h-[calc(100dvh-1.5rem)] min-h-0 w-[calc(100vw-1.5rem)] max-w-2xl flex-col gap-3 !overflow-hidden p-4 sm:gap-4 sm:p-6"
+        }
+      >
+        <DialogHeader className="shrink-0 pr-8">
           <DialogTitle>{isEdit ? "編輯排程" : "新增排程"}</DialogTitle>
           <DialogDescription>
             {isEdit
@@ -53,6 +58,7 @@ export function ScheduleDialog({
         </DialogHeader>
         <ScheduleForm
           key={editing?.id ?? "create"}
+          className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
           assistantId={assistantId}
           apiUrl={apiUrl}
           envApiUrl={envApiUrl}

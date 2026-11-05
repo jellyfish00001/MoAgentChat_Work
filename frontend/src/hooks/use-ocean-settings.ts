@@ -33,8 +33,9 @@ export const MAX_SHARK_SIZE = 2;
 export const MIN_SHARK_SPEED = 0.5;
 export const MAX_SHARK_SPEED = 1.5;
 
+/** 新使用者預設：明亮 + 不顯示 ASCII 背景（可在設定再開）。 */
 const DEFAULTS: OceanSettingsState = {
-  enabled: true,
+  enabled: false,
   sharkCount: 1,
   sharkSizeScale: 1,
   sharkSpeedScale: 0.8,

@@ -24,6 +24,14 @@ import {
   Trash2,
 } from "lucide-react";
 import { ScheduleDialog } from "./ScheduleDialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
+/** localStorage：排程側欄是否展開（預設收合）。 */
+const SCHEDULE_EXPANDED_KEY = "aipark.scheduleSidebar.expanded";
 
 /** 啟用排程在前、暫不執行在後；同組依標題排序。 */
 function sortSchedules(list: ScheduleDto[]): ScheduleDto[] {
@@ -124,7 +132,15 @@ export function ScheduleSidebar({
   const [, setThreadId] = useQueryState("threadId");
   const [items, setItems] = useState<ScheduleDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(true);
+  /** 預設收合；記住使用者上次展開／收合，避免每次開側欄又自動展開。 */
+  const [expanded, setExpanded] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(SCHEDULE_EXPANDED_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
   const [rowBusy, setRowBusy] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ScheduleDto | null>(null);
@@ -150,6 +166,15 @@ export function ScheduleSidebar({
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  /** 持久化排程區塊展開狀態。 */
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SCHEDULE_EXPANDED_KEY, expanded ? "1" : "0");
+    } catch {
+      /* ignore quota／私密模式 */
+    }
+  }, [expanded]);
 
   /** 切換至指定 thread；無 lastThreadId 時由呼叫端 toast。 */
   const openThread = (id: string) => {
@@ -204,11 +229,20 @@ export function ScheduleSidebar({
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
         >
-          {expanded ? (
-            <ChevronDown className="text-muted-foreground size-4 shrink-0" />
-          ) : (
-            <ChevronRight className="text-muted-foreground size-4 shrink-0" />
-          )}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex shrink-0">
+                {expanded ? (
+                  <ChevronDown className="text-muted-foreground size-4" />
+                ) : (
+                  <ChevronRight className="text-muted-foreground size-4" />
+                )}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={6}>
+              {expanded ? "摺疊聊天" : "展開聊天"}
+            </TooltipContent>
+          </Tooltip>
           <span className="truncate">排程</span>
           {!loading && items.length > 0 ? (
             <span className="text-muted-foreground text-xs font-normal">
@@ -232,7 +266,8 @@ export function ScheduleSidebar({
       {expanded ? (
         <div
           className={cn(
-            "scrollbar-ocean flex flex-col gap-0.5 overflow-y-auto px-1",
+            // 可滾動但不顯示滾輪條；展開高度維持原 10rem／13rem
+            "scrollbar-hidden flex flex-col gap-0.5 overflow-y-auto px-1",
             compact ? "max-h-40" : "max-h-52",
           )}
         >

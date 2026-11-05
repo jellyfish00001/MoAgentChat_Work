@@ -12,7 +12,7 @@ import {
 import { ScheduleBadge } from "./ScheduleBadge";
 
 /**
- * 目前 thread 若為排程執行產生，在頂部顯示 badge 與 schedule_title。
+ * 目前 thread 若為排程執行產生，在對話頂欄顯示 badge 與 schedule_title。
  */
 export function ScheduleThreadHeader({
   apiUrl,
@@ -26,6 +26,7 @@ export function ScheduleThreadHeader({
   const [threadId] = useQueryState("threadId");
   const [title, setTitle] = useState<string | null>(null);
 
+  /** 依 threadId 讀 metadata，非排程來源則隱藏。 */
   useEffect(() => {
     if (!threadId) {
       setTitle(null);

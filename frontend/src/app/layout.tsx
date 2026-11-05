@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "W.AgentChat — Wistron agent chat UI",
 };
 
-/** Avoid theme flash before hydration; mirrors readStoredUiTheme migration. */
+/** 避免 hydration 前閃爍；預設 Light，遷移規則對齊 `lib/ui-theme.ts`。 */
 const themeInitScript = `
 (function(){
   try {
@@ -20,11 +20,11 @@ const themeInitScript = `
     }
     if(t==='dark') t='wistron-dark';
     else if(t==='light') t='wistron-light';
-    else if(t==='wistron' || t==='wistron-classic') t='wistron-dark';
-    if(t!=='wistron-dark'&&t!=='wistron-light') t='wistron-dark';
+    else if(t==='wistron' || t==='wistron-classic') t='wistron-light';
+    if(t!=='wistron-dark'&&t!=='wistron-light') t='wistron-light';
     document.documentElement.setAttribute('data-theme', t);
   } catch(e) {
-    document.documentElement.setAttribute('data-theme','wistron-dark');
+    document.documentElement.setAttribute('data-theme','wistron-light');
   }
 })();
 `;
@@ -37,7 +37,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="wistron-dark"
+      data-theme="wistron-light"
       suppressHydrationWarning
     >
       <head>

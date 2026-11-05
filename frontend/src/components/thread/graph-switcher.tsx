@@ -6,10 +6,10 @@ import { useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  getGraphOption,
   graphsForAccess,
   isFinanceGraph,
   PUBLIC_GRAPH_ID,
-  resolveGraphLabel,
   type LocalGraphOption,
 } from "@/lib/local-graphs";
 import { useLocalAccess } from "@/hooks/use-local-access";
@@ -124,35 +124,25 @@ export function GraphSwitcher({
   );
 }
 
-/** 主畫面頂欄顯示目前 Graph 標籤。 */
+/** 主畫面頂欄／空狀態：只顯示 shortLabel（如 Demo），不重複長名與副標。 */
 export function CurrentGraphBadge({ className }: { className?: string }) {
   const envAssistantId = process.env.NEXT_PUBLIC_ASSISTANT_ID;
   const [assistantId] = useQueryState("assistantId", {
     defaultValue: envAssistantId || "",
   });
   const current = assistantId || envAssistantId || "";
-  const label = resolveGraphLabel(current);
-  const finance = isFinanceGraph(current);
+  const option = getGraphOption(current);
+  const text = option?.shortLabel ?? (current || "未選擇");
 
   return (
     <span
       className={cn(
-        "border-border bg-panel/80 text-muted-foreground inline-flex max-w-[16rem] items-center gap-1.5 truncate rounded-full border px-2.5 py-0.5 text-xs backdrop-blur-sm",
+        "border-border bg-panel/80 text-muted-foreground inline-flex max-w-[16rem] items-center truncate rounded-full border px-2.5 py-0.5 text-xs",
         className,
       )}
-      title={current || undefined}
+      title={option?.label ?? current ?? undefined}
     >
-      <span className="truncate">{label}</span>
-      <span
-        className={cn(
-          "shrink-0 rounded-full px-1.5 py-px text-[10px]",
-          finance
-            ? "bg-accent text-accent-foreground"
-            : "bg-muted text-muted-foreground",
-        )}
-      >
-        {finance ? "財務" : "Demo"}
-      </span>
+      <span className="truncate">{text}</span>
     </span>
   );
 }

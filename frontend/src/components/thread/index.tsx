@@ -32,12 +32,6 @@ import { toast } from "sonner";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { Label } from "../ui/label";
 import { Switch } from "../ui/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
 import { useFileUpload } from "@/hooks/use-file-upload";
 import { useOceanSettings } from "@/hooks/use-ocean-settings";
 import { AsciiOcean } from "@/components/ascii-ocean";
@@ -110,30 +104,6 @@ function ScrollToBottom(props: { className?: string }) {
       <ArrowDown className="h-4 w-4" />
       <span>Scroll to bottom</span>
     </Button>
-  );
-}
-
-function ConnectedHost({ apiUrl }: { apiUrl: string }) {
-  let host: string;
-  try {
-    host = new URL(apiUrl).host;
-  } catch {
-    host = apiUrl;
-  }
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className="text-muted-foreground hidden max-w-40 truncate text-xs sm:inline">
-            {host}
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>Connected to {apiUrl}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
   );
 }
 
@@ -329,9 +299,13 @@ export function Thread() {
     (m) => m.type === "ai" || m.type === "tool",
   );
 
+  const sidebarTransition = isLargeScreen
+    ? { type: "spring" as const, stiffness: 300, damping: 30 }
+    : { duration: 0 };
+
   return (
-    <div className="relative flex h-screen w-full overflow-hidden">
-      {/* 全視窗海洋／聚光：不隨側欄開合 resize，避免 canvas 重建閃爍 */}
+    <div className="bg-background relative flex h-svh w-full max-w-[100vw] overflow-hidden">
+      {/* 全視窗海洋／聚光：absolute 覆蓋，不佔 flex 寬度 */}
       {ocean.enabled && (
         <div
           className={cn(
@@ -348,51 +322,30 @@ export function Thread() {
         className="spotlight-focus pointer-events-none absolute inset-0 z-[5]"
       />
 
-      <div className="relative z-20 hidden lg:flex">
-        <motion.div
-          className="border-sidebar-border bg-sidebar/95 absolute h-full overflow-hidden border-r backdrop-blur-md"
-          style={{ width: 300 }}
-          animate={{ x: chatHistoryOpen ? 0 : -300 }}
-          initial={{ x: -300 }}
-          transition={
-            isLargeScreen
-              ? { type: "spring", stiffness: 300, damping: 30 }
-              : { duration: 0 }
-          }
-        >
-          <div
-            className="relative h-full"
-            style={{ width: 300 }}
-          >
-            <ThreadHistory />
-          </div>
-        </motion.div>
-      </div>
-
-      <div
-        className={cn(
-          "relative z-10 grid w-full grid-cols-[1fr_0fr] transition-all duration-500",
-          artifactOpen && "grid-cols-[3fr_2fr]",
-        )}
+      {/*
+        桌面側欄改走 flex 寬度動畫（0↔248），避免 absolute + paddingLeft／width:calc
+        在外部瀏覽器造成右側空洞。行動版仍由 ThreadHistory 內 Sheet 處理。
+      */}
+      <motion.aside
+        className="relative z-20 hidden h-full shrink-0 overflow-hidden lg:block"
+        initial={false}
+        animate={{ width: chatHistoryOpen ? 248 : 0 }}
+        transition={sidebarTransition}
+        aria-hidden={!chatHistoryOpen}
       >
-        <motion.div
+        {/* 固定內容寬；外層 width 動畫裁切，主區用 flex-1 自然填滿剩餘寬度 */}
+        <div className="h-full w-[248px]">
+          <ThreadHistory />
+        </div>
+      </motion.aside>
+
+      {/* 主區 + 可選 Artifact：一律 min-w-0，關閉 Artifact 時不留空欄 */}
+      <div className="relative z-10 flex min-h-0 min-w-0 flex-1 overflow-hidden">
+        <div
           className={cn(
-            "relative flex min-w-0 flex-1 flex-col overflow-hidden",
+            "relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden",
             !chatStarted && "grid-rows-[1fr]",
           )}
-          animate={{
-            marginLeft: chatHistoryOpen ? (isLargeScreen ? 300 : 0) : 0,
-            width: chatHistoryOpen
-              ? isLargeScreen
-                ? "calc(100% - 300px)"
-                : "100%"
-              : "100%",
-          }}
-          transition={
-            isLargeScreen
-              ? { type: "spring", stiffness: 300, damping: 30 }
-              : { duration: 0 }
-          }
         >
           {/* Sticky top bar — frosted so scrolled messages don't collide with logo */}
           <div className="border-border/40 bg-background/75 absolute top-0 left-0 z-10 flex w-full items-center justify-between gap-3 border-b p-2 pl-4 backdrop-blur-md">
@@ -423,13 +376,12 @@ export function Thread() {
                   </motion.button>
                   {/* [ai_prepare 修改] 標示目前所屬 LangGraph */}
                   <CurrentGraphBadge />
-                  {/* [ai_prepare] 排程執行產生的 thread 顯示標題 */}
+                  {/* 排程對話頂欄標註（歷史列表不顯示） */}
                   <ScheduleThreadHeader
                     apiUrl={stream.apiUrl}
                     envApiUrl={process.env.NEXT_PUBLIC_API_URL}
                     authScheme={process.env.NEXT_PUBLIC_AUTH_SCHEME}
                   />
-                  <ConnectedHost apiUrl={stream.apiUrl} />
                 </>
               )}
             </div>
@@ -574,12 +526,13 @@ export function Thread() {
                             form?.requestSubmit();
                           }
                         }}
-                        placeholder="Type your message..."
+                        placeholder="輸入訊息…"
                         className="field-sizing-content min-h-0 resize-none rounded-2xl border-none bg-transparent p-3.5 pb-0 shadow-none focus-visible:ring-0"
                       />
 
                       <div className="flex items-center gap-6 p-2 pt-4">
-                        <div>
+                        {/* 暫時隱藏 Hide Tool Calls（邏輯／狀態保留，勿刪） */}
+                        <div className="hidden">
                           <div className="flex items-center space-x-2">
                             <Switch
                               id="render-tool-calls"
@@ -599,7 +552,7 @@ export function Thread() {
                           className="text-muted-foreground flex cursor-pointer items-center gap-2"
                         >
                           <Plus className="size-5" />
-                          <span className="text-sm">Upload PDF or Image</span>
+                          <span className="text-sm">上傳 PDF 或圖片</span>
                         </Label>
                         <input
                           id="file-input"
@@ -639,21 +592,26 @@ export function Thread() {
               }
             />
           </StickToBottom>
-        </motion.div>
-        <div className="relative flex flex-col border-l">
-          <div className="absolute inset-0 flex min-w-[30vw] flex-col">
-            <div className="grid grid-cols-[1fr_auto] border-b p-4">
-              <ArtifactTitle className="truncate overflow-hidden" />
-              <button
-                onClick={closeArtifact}
-                className="cursor-pointer"
-              >
-                <XIcon className="size-5" />
-              </button>
-            </div>
-            <ArtifactContent className="relative flex-grow" />
-          </div>
         </div>
+
+        {artifactOpen ? (
+          <div className="border-border relative flex w-[min(40vw,28rem)] min-w-0 shrink-0 flex-col overflow-hidden border-l">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] border-b p-4">
+                <ArtifactTitle className="truncate overflow-hidden" />
+                <button
+                  onClick={closeArtifact}
+                  className="cursor-pointer"
+                  type="button"
+                  aria-label="關閉 Artifact"
+                >
+                  <XIcon className="size-5" />
+                </button>
+              </div>
+              <ArtifactContent className="relative min-h-0 min-w-0 flex-1 overflow-auto" />
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

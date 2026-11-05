@@ -182,12 +182,32 @@
     height: 6px;
   }
 
+  /* 隱藏系統捲軸上下箭頭；僅內容超出時才出現細軌道（配合 overflow-y-auto） */
+  .scrollbar-ocean::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
   .scrollbar-ocean::-webkit-scrollbar-thumb {
     background: var(--border);
+    border-radius: 999px;
   }
 
   .scrollbar-ocean::-webkit-scrollbar-track {
     background: transparent;
+  }
+
+  /* 側欄列表：可滾動但不顯示滾輪條 */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
   }
 
   /*

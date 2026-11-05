@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** 歷史列表／標題列共用的「排程」來源標籤。 */
+/** 「排程」來源標籤（對話頂欄／確認卡使用）。 */
 export function ScheduleBadge({ className }: { className?: string }) {
   return (
     <span
