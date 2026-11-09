@@ -76,20 +76,16 @@ def build_material_pivot(material_df: pd.DataFrame) -> pd.DataFrame:
     reason_col = _find_col(material_df, ["Reason"])
     qv_col = _find_col(material_df, ["QV in Material(LC)", "QV in Material (LC)"])
     if not reason_col or not qv_col:
-        raise ValueError(
-            f"材料分析缺 Reason / QV 欄；have={list(material_df.columns)[:20]}"
-        )
+        raise ValueError(f"材料分析缺 Reason / QV 欄；have={list(material_df.columns)[:20]}")
     work = material_df[[reason_col, qv_col]].copy()
-    work[reason_col] = work[reason_col].astype(str).map(
-        lambda x: REASON_REPLACEMENTS.get(x.strip(), x.strip())
+    work[reason_col] = (
+        work[reason_col].astype(str).map(lambda x: REASON_REPLACEMENTS.get(x.strip(), x.strip()))
     )
     work[reason_col] = work[reason_col].map(lambda x: re.sub(r"^\d+\.\s*", "", x).strip())
     work[qv_col] = pd.to_numeric(work[qv_col], errors="coerce").fillna(0)
     # merge same reason ignoring case / 简繁 via norm key then display first
     work["_key"] = work[reason_col].map(_norm_reason)
-    grouped = work.groupby("_key", as_index=False).agg(
-        {reason_col: "first", qv_col: "sum"}
-    )
+    grouped = work.groupby("_key", as_index=False).agg({reason_col: "first", qv_col: "sum"})
     grouped = grouped.rename(columns={reason_col: "Reason", qv_col: "QV in Material(LC)"})
     return grouped[["Reason", "QV in Material(LC)"]]
 
@@ -195,7 +191,8 @@ def fill_accounting(cover: pd.DataFrame, acct_df: pd.DataFrame) -> tuple[pd.Data
     )
     if not reason_col or not pcl_col or not text_col or not amt_col:
         return out, [
-            f"會計調整缺欄，跳過 (text={text_col}, amt={amt_col}, cols={list(acct_df.columns)[:12]})"
+            f"會計調整缺欄，跳過 (text={text_col}, amt={amt_col}, "
+            f"cols={list(acct_df.columns)[:12]})"
         ]
     _ensure_float_col(out, pcl_col)
 
@@ -206,7 +203,9 @@ def fill_accounting(cover: pd.DataFrame, acct_df: pd.DataFrame) -> tuple[pd.Data
             continue
         mask = acct_df[text_col].astype(str).str.contains(re.escape(reason), case=False, na=False)
         if mask.any():
-            total = float(pd.to_numeric(acct_df.loc[mask, amt_col], errors="coerce").fillna(0).sum())
+            total = float(
+                pd.to_numeric(acct_df.loc[mask, amt_col], errors="coerce").fillna(0).sum()
+            )
             if total:
                 out.at[idx, pcl_col] = total
                 notes.append(f"會計調整「{reason}」={total}")
@@ -225,10 +224,19 @@ def fill_65011201(cover: pd.DataFrame, df: pd.DataFrame) -> tuple[pd.DataFrame, 
     _ensure_float_col(out, pcl_col)
     for idx, row in out.iterrows():
         reason = str(row[reason_col]).strip()
-        if "Reserve" not in reason and "reserve" not in reason.lower() and "迴轉" not in reason and "提列" not in reason:
+        if (
+            "Reserve" not in reason
+            and "reserve" not in reason.lower()
+            and "迴轉" not in reason
+            and "提列" not in reason
+        ):
             continue
         if remark_col:
-            mask = df[remark_col].astype(str).str.contains("reserve|Reserve|迴轉|提列", case=False, na=False)
+            mask = (
+                df[remark_col]
+                .astype(str)
+                .str.contains("reserve|Reserve|迴轉|提列", case=False, na=False)
+            )
             total = float(pd.to_numeric(df.loc[mask, amt_col], errors="coerce").fillna(0).sum())
         else:
             total = float(pd.to_numeric(df[amt_col], errors="coerce").fillna(0).sum())
@@ -319,7 +327,9 @@ def run_cover_pipeline(data_dir: Path) -> CoverPipelineResult:
 def analyze_period_top3(material_df: pd.DataFrame, *, label: str) -> dict[str, Any]:
     reason_col = _find_col(material_df, ["Reason"])
     qv_col = _find_col(material_df, ["QV in Material(LC)"])
-    group_col = _find_col(material_df, ["Component Material Group", "Material Group Des.", "Material Group"])
+    group_col = _find_col(
+        material_df, ["Component Material Group", "Material Group Des.", "Material Group"]
+    )
     mat_col = _find_col(material_df, ["Material"])
     if not reason_col or not qv_col:
         return {"label": label, "error": "缺 Reason/QV 欄"}
@@ -331,9 +341,7 @@ def analyze_period_top3(material_df: pd.DataFrame, *, label: str) -> dict[str, A
         sub = df[df[reason_col] == reason]
         top_groups = []
         if group_col:
-            top_groups = (
-                sub.groupby(group_col)[qv_col].sum().sort_values().head(3).to_dict()
-            )
+            top_groups = sub.groupby(group_col)[qv_col].sum().sort_values().head(3).to_dict()
         top_mat = None
         if mat_col and not sub.empty:
             top_mat = sub.groupby(mat_col)[qv_col].sum().sort_values().index[0]
@@ -357,14 +365,16 @@ def render_qv_html(summary: dict[str, Any], narrative: dict[str, Any] | None = N
     steps = summary.get("steps_done") or []
     note_lis = "".join(f"<li>{html_mod.escape(str(n))}</li>" for n in notes)
     step_lis = "".join(f"<li>{html_mod.escape(str(s))}</li>" for s in steps)
+    next_actions = html_mod.escape(str(narrative.get("next_actions") or []))
     return f"""<!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8"/><title>QV DMS</title>
-<style>body{{font-family:Segoe UI,Microsoft JhengHei,sans-serif;background:#111;color:#eee;padding:24px}}
+<style>
+body{{font-family:Segoe UI,Microsoft JhengHei,sans-serif;background:#111;color:#eee;padding:24px}}
 section{{background:#1c1c1c;padding:16px;border-radius:8px;margin-bottom:16px}}</style>
 </head><body>
 <h1>{title}</h1>
 <section><h2>已執行步驟</h2><ul>{step_lis}</ul></section>
 <section><h2>備註</h2><ul>{note_lis}</ul></section>
-<section><h2>下一步（LLM）</h2><pre>{html_mod.escape(str(narrative.get("next_actions") or []))}</pre></section>
+<section><h2>下一步（LLM）</h2><pre>{next_actions}</pre></section>
 </body></html>
 """

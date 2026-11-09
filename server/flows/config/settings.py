@@ -1,4 +1,4 @@
-﻿"""Central settings loaded from server/.env (or repo-root .env)."""
+"""Central settings loaded from server/.env (or repo-root .env)."""
 
 from __future__ import annotations
 

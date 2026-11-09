@@ -1,4 +1,4 @@
-﻿"""Compile Rework MO detective graph."""
+"""Compile Rework MO detective graph."""
 
 from __future__ import annotations
 

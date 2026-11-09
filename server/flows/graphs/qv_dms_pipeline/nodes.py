@@ -10,13 +10,13 @@ from flows.config.settings import get_settings
 from flows.domain.excel_io import load_excel
 from flows.domain.qv_dms.cover import (
     analyze_period_top3,
+    build_material_pivot,
     fill_65011201,
     fill_accounting,
     fill_inventory_adj,
     fill_production_mo,
     load_cover,
     match_and_fill_pcl500,
-    build_material_pivot,
     render_qv_html,
 )
 from flows.domain.qv_dms.inventory import inventory_qv_dms

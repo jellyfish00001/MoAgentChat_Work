@@ -29,7 +29,10 @@ public sealed class LangGraphHttpClient : ILangGraphClient
     public async Task<LangGraphRunResult> CreateThreadAndRunAsync(LangGraphRunRequest request, CancellationToken ct = default)
     {
         var client = _httpFactory.CreateClient("langgraph");
-        client.BaseAddress = new Uri(request.ApiUrl.TrimEnd('/') + "/");
+        // 前端存的 ApiUrl 是瀏覽器看得到的網址（k8s 上是 https://<前端>/api），
+        // 叢集內改用 LANGGRAPH_API_URL 直連 server Service
+        var apiUrl = Environment.GetEnvironmentVariable("LANGGRAPH_API_URL") ?? request.ApiUrl;
+        client.BaseAddress = new Uri(apiUrl.TrimEnd('/') + "/");
         client.Timeout = TimeSpan.FromMinutes(5);
 
         try

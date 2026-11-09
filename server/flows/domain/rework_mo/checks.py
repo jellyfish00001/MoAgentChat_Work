@@ -48,9 +48,7 @@ def _posting_dates(rows: pd.DataFrame) -> pd.Series:
 
 
 def last_101_date(mov_rows: pd.DataFrame) -> pd.Timestamp | None:
-    receipts = mov_rows[
-        mov_rows["Movement type"].astype(str).str.strip() == GOODS_RECEIPT
-    ]
+    receipts = mov_rows[mov_rows["Movement type"].astype(str).str.strip() == GOODS_RECEIPT]
     dates = _posting_dates(receipts).dropna()
     if dates.empty:
         return None
@@ -61,9 +59,7 @@ def run_case12_cross_month(mov_rows: pd.DataFrame) -> CheckResult:
     """Case 1/2: whole-order cross-month between 261 and 101."""
     result = CheckResult()
     issues = mov_rows[mov_rows["Movement type"].astype(str).str.strip() == GOODS_ISSUE]
-    receipts = mov_rows[
-        mov_rows["Movement type"].astype(str).str.strip() == GOODS_RECEIPT
-    ]
+    receipts = mov_rows[mov_rows["Movement type"].astype(str).str.strip() == GOODS_RECEIPT]
     i_dates = _posting_dates(issues).dropna()
     r_dates = _posting_dates(receipts).dropna()
     if i_dates.empty or r_dates.empty:
@@ -255,9 +251,7 @@ def _find_matching_531(
     material: str,
     dsca_map: dict[str, str],
 ) -> pd.Series | None:
-    returns = mov_rows[
-        mov_rows["Movement type"].astype(str).str.strip() == BYPRODUCT_RECEIPT
-    ]
+    returns = mov_rows[mov_rows["Movement type"].astype(str).str.strip() == BYPRODUCT_RECEIPT]
     if returns.empty:
         return None
     exact = returns[returns["Material"].astype(str).str.strip() == material]

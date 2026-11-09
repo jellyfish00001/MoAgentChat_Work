@@ -1,12 +1,15 @@
 # 共用設定：登入 Harbor、使用有 Docker 的 runner
 # 子類別要設定 SERVICE_NAME：同時是「資料夾名稱」和「image 名稱」（例如 server、frontend）
 # 每個服務資料夾裡都要有自己的 Dockerfile
+# 一個資料夾要出多個 image 時（例如 scheduler 的 Api／Job），另外設定：
+#   IMAGE_NAME：image 名稱（預設同 SERVICE_NAME）
+#   DOCKERFILE：Dockerfile 路徑（預設 $SERVICE_NAME/Dockerfile），build context 仍是 $SERVICE_NAME
 .harbor:
   image: ${HARBOR_URL}/base_image/docker:28-dind
   tags:
     - k8s-runners
   variables:
-    IMAGE_PATH: fin_ai_agent # Harbor 專案底下的資料夾（只能小寫）
+    IMAGE_PATH: mo-agentchat # Harbor 專案底下的資料夾（只能小寫）
   before_script:
     # 檢查必要的 GitLab CI/CD Variables 有沒有設定（密碼只顯示是否有值，不印出內容）
     - |
@@ -17,7 +20,9 @@
       echo "HARBOR_URL=$HARBOR_URL HARBOR_PROJECT=$HARBOR_PROJECT HARBOR_USER=$HARBOR_USER"
       [ -z "$MISSING" ] || exit 1
     - echo "${HARBOR_PASSWORD}" | docker login -u "${HARBOR_USER}" --password-stdin "${HARBOR_URL}"
-    - REPO=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${SERVICE_NAME} # 完整名稱是 $REPO-<環境>
+    - IMAGE_NAME=${IMAGE_NAME:-$SERVICE_NAME}
+    - DOCKERFILE=${DOCKERFILE:-$SERVICE_NAME/Dockerfile}
+    - REPO=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${IMAGE_NAME} # 完整名稱是 $REPO-<環境>
     # 原始碼指紋：服務資料夾內容相同就相同，用來找出「QAS 測過的就是這份程式碼」的 image
     - SRC_ID=src-$(find $SERVICE_NAME -type f | sort | xargs sha256sum | sha256sum | cut -c1-12)
 
@@ -30,7 +35,7 @@
   script:
     - BUILD_ID=`TZ=UTC-8 date +%Y%m%d%H%M`-${CI_COMMIT_SHORT_SHA} # 台灣時間＋commit，例如 202610151430-a1b2c3d
     - IMAGE=$REPO-$DEPLOY_ENV
-    - docker build -f ./$SERVICE_NAME/Dockerfile --build-arg BUILD_ID=$BUILD_ID -t $IMAGE:$BUILD_ID -t $IMAGE:$SRC_ID ./$SERVICE_NAME
+    - docker build -f ./$DOCKERFILE --build-arg BUILD_ID=$BUILD_ID -t $IMAGE:$BUILD_ID -t $IMAGE:$SRC_ID ./$SERVICE_NAME
     - docker push $IMAGE:$BUILD_ID
     - docker push $IMAGE:$SRC_ID
     - echo "✅ 已推送到 Harbor：$IMAGE:$BUILD_ID"

@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from flows.domain.movement_types import GOODS_ISSUE, GOODS_RECEIPT
 from flows.domain.rework_mo.analyze import (
     analyze_order,
     apply_reasons_to_qv,
@@ -13,7 +14,6 @@ from flows.domain.rework_mo.analyze import (
     load_rework_mo_tables,
 )
 from flows.domain.rework_mo.classify import CaseType, classify_case
-from flows.domain.movement_types import GOODS_ISSUE, GOODS_RECEIPT
 
 
 def test_load_and_list_orders(rework_mo_dir: Path) -> None:

@@ -1,4 +1,4 @@
-﻿"""Compile qv_dms_pipeline graph."""
+"""Compile qv_dms_pipeline graph."""
 
 from __future__ import annotations
 

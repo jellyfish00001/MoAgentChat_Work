@@ -56,4 +56,5 @@ RecurringJob.AddOrUpdate<ProcessDueSchedulesJob>(
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Local });
 
 app.MapGet("/health", () => Results.Ok(new { ok = true, hangfire = "/hangfire" }));
-app.Run("http://127.0.0.1:5056");
+// k8s 由 ASPNETCORE_URLS 指定（容器內要聽 0.0.0.0）；本機預設只聽 loopback
+app.Run(app.Configuration["urls"] ?? "http://127.0.0.1:5056");

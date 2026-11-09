@@ -1,4 +1,4 @@
-﻿"""Graph nodes for Rework MO detective — observable I/O."""
+"""Graph nodes for Rework MO detective — observable I/O."""
 
 from __future__ import annotations
 
@@ -34,9 +34,7 @@ def list_orders(state: DetectiveState) -> dict[str, Any]:
     orders = list_unique_orders(tables.qv)
     lines = "\n".join(f"| {o} |" for o in orders) or "| （無） |"
     md = (
-        "🔎 **小侦探已为您锁定待分析的 Rework MO 工单清单：**\n"
-        "| Order Number |\n| :--- |\n"
-        f"{lines}"
+        f"🔎 **小侦探已为您锁定待分析的 Rework MO 工单清单：**\n| Order Number |\n| :--- |\n{lines}"
     )
     msg = node_message(
         node="list_orders",

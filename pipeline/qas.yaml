@@ -35,6 +35,29 @@ qas-build-frontend:
         - pipeline/**/*
         - .gitlab-ci.yml
 
+# scheduler 一個資料夾出兩個 image（Api／Job），共用同一份原始碼
+.qas-scheduler-rules:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - scheduler/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+qas-build-scheduler-api:
+  extends: [.build-image, .qas, .qas-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-api
+    DOCKERFILE: scheduler/AiPrepare.Scheduler.Api/Dockerfile
+
+qas-build-scheduler-job:
+  extends: [.build-image, .qas, .qas-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-job
+    DOCKERFILE: scheduler/AiPrepare.Scheduler.Job/Dockerfile
+
 # qas-secret-scan:
 #   extends: [.secret-scan, .qas]
 

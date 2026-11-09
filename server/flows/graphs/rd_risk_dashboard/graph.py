@@ -1,4 +1,4 @@
-﻿"""Compile rd_risk_dashboard graph."""
+"""Compile rd_risk_dashboard graph."""
 
 from __future__ import annotations
 

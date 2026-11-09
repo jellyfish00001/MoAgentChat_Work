@@ -1,4 +1,4 @@
-﻿from flows.domain.rework_mo.analyze import (
+from flows.domain.rework_mo.analyze import (
     CaseType,
     OrderAnalysis,
     analyze_order,

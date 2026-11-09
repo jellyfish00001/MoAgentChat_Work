@@ -47,7 +47,8 @@ body{{margin:0;font-family:Segoe UI,Microsoft JhengHei,sans-serif;background:#0f
 header{{padding:24px 32px;border-bottom:1px solid #243044}}
 h1{{margin:0 0 8px;font-size:1.4rem}}
 .meta{{opacity:.7;font-size:.9rem}}
-.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;padding:24px 32px}}
+.cards{{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+gap:12px;padding:24px 32px}}
 .card{{background:#1a2332;border-radius:10px;padding:16px}}
 .card .label{{font-size:.75rem;opacity:.7}}
 .card .value{{font-size:1.25rem;margin-top:6px;font-weight:600}}
