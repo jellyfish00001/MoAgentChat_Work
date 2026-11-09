@@ -70,13 +70,7 @@ def load_rework_mo_tables(data_dir: Path) -> ReworkMoTables:
 def list_unique_orders(qv: pd.DataFrame) -> list[str]:
     require_columns(qv, ["Order Number"], label="QV_Report")
     orders = (
-        qv["Order Number"]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .loc[lambda s: s != ""]
-        .unique()
-        .tolist()
+        qv["Order Number"].dropna().astype(str).str.strip().loc[lambda s: s != ""].unique().tolist()
     )
     return sorted(orders)
 

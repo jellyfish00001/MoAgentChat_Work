@@ -1,4 +1,4 @@
-﻿"""Azure AD Client Credentials → APIM → AzureChatOpenAI (single factory)."""
+"""Azure AD Client Credentials → APIM → AzureChatOpenAI (single factory)."""
 
 from __future__ import annotations
 
@@ -67,9 +67,7 @@ def get_chat_model(*, temperature: float = 0.2) -> AzureChatOpenAI:
     return AzureChatOpenAI(
         azure_endpoint=settings.az_llm_endpoint.rstrip("/"),
         api_key="fakekey",
-        azure_ad_token_provider=get_bearer_token_provider(
-            credential, settings.az_scope
-        ),
+        azure_ad_token_provider=get_bearer_token_provider(credential, settings.az_scope),
         api_version=settings.az_llm_version,
         azure_deployment=settings.llm_model_name,
         model=settings.llm_model_name,

@@ -90,7 +90,11 @@ def narrate_dashboard(state: RdRiskState) -> dict[str, Any]:
         note = narrative.get("headline", "")
     except Exception as exc:  # noqa: BLE001 — HTML/JSON still use rule scan without LLM
         note = f"LLM 摘要失敗：{type(exc).__name__}: {exc}"
-        narrative = {"headline": "規則掃描結果（無 LLM）", "risks": scan.get("notes") or [], "actions": []}
+        narrative = {
+            "headline": "規則掃描結果（無 LLM）",
+            "risks": scan.get("notes") or [],
+            "actions": [],
+        }
     msg = node_message(
         node="narrate",
         kind="llm",

@@ -19,11 +19,7 @@ class CaseType(StrEnum):
 def movement_types_for_order(mov_rows: pd.DataFrame) -> set[str]:
     if mov_rows.empty or "Movement type" not in mov_rows.columns:
         return set()
-    return {
-        str(x).strip()
-        for x in mov_rows["Movement type"].dropna().tolist()
-        if str(x).strip()
-    }
+    return {str(x).strip() for x in mov_rows["Movement type"].dropna().tolist() if str(x).strip()}
 
 
 def materials_by_type(mov_rows: pd.DataFrame, mt: str) -> set[str]:
@@ -34,11 +30,7 @@ def materials_by_type(mov_rows: pd.DataFrame, mt: str) -> set[str]:
     if mat_col is None:
         return set()
     subset = mov_rows[mov_rows[mt_col].astype(str).str.strip() == mt]
-    return {
-        str(m).strip()
-        for m in subset[mat_col].dropna().tolist()
-        if str(m).strip()
-    }
+    return {str(m).strip() for m in subset[mat_col].dropna().tolist() if str(m).strip()}
 
 
 def classify_case(mov_rows: pd.DataFrame) -> tuple[CaseType, list[str]]:

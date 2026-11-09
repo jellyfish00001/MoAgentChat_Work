@@ -1,4 +1,4 @@
-﻿"""Rework MO detective — orchestrate classify / checks / row reasons (no LLM)."""
+"""Rework MO detective — orchestrate classify / checks / row reasons (no LLM)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,10 @@ from typing import Any
 
 import pandas as pd
 
+from flows.domain.movement_types import GOODS_ISSUE, GOODS_RECEIPT
 from flows.domain.rework_mo.checks import CheckResult, run_case12_cross_month, run_six_checks
 from flows.domain.rework_mo.classify import CaseType, classify_case, materials_by_type
 from flows.domain.rework_mo.tables import ReworkMoTables, list_unique_orders, load_rework_mo_tables
-from flows.domain.movement_types import GOODS_ISSUE, GOODS_RECEIPT
 
 # re-exports for tests / package
 __all__ = [
@@ -48,9 +48,7 @@ def analyze_order(tables: ReworkMoTables, order_number: str) -> OrderAnalysis:
     order = str(order_number).strip()
     qv_rows = tables.qv[tables.qv["Order Number"].astype(str).str.strip() == order]
     mov_col = "Order" if "Order" in tables.movements.columns else "Order Number"
-    mov_rows = tables.movements[
-        tables.movements[mov_col].astype(str).str.strip() == order
-    ].copy()
+    mov_rows = tables.movements[tables.movements[mov_col].astype(str).str.strip() == order].copy()
 
     materials = sorted(
         {
@@ -88,9 +86,7 @@ def analyze_order(tables: ReworkMoTables, order_number: str) -> OrderAnalysis:
     notes.extend(check_result.flags)
     suggested, row_reasons, cross = _derive_reasons(case, check_result, qv_rows, mov_rows)
     bom_missing = [
-        f.material
-        for f in check_result.findings
-        if f.check == "bom_compliance" and f.material
+        f.material for f in check_result.findings if f.check == "bom_compliance" and f.material
     ]
 
     return OrderAnalysis(
@@ -158,9 +154,7 @@ def _derive_reasons(
                 code = f.reason_code
                 cross = "时间差" in code or "時間差" in code
         # mark all issue/receipt related qv rows
-        mats = materials_by_type(mov_rows, GOODS_ISSUE) | materials_by_type(
-            mov_rows, GOODS_RECEIPT
-        )
+        mats = materials_by_type(mov_rows, GOODS_ISSUE) | materials_by_type(mov_rows, GOODS_RECEIPT)
         if not mats:
             row_reasons.append({"material": "*", "reason_code": code})
         else:
@@ -172,9 +166,7 @@ def _derive_reasons(
     codes = [f.reason_code for f in check_result.findings if f.reason_code]
     for f in check_result.findings:
         if f.reason_code:
-            row_reasons.append(
-                {"material": f.material, "reason_code": f.reason_code}
-            )
+            row_reasons.append({"material": f.material, "reason_code": f.reason_code})
             if "时间差" in f.reason_code or "時間差" in f.reason_code:
                 cross = True
     suggested = codes[0] if codes else "05.Rework MO"

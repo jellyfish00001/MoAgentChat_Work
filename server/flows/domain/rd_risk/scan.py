@@ -188,18 +188,14 @@ def scan_rd_risks(tables: RdTables, *, sample_limit: int = 50) -> RdScanResult:
         hrow = header_by_order.get(order)
         ot = _order_type(hrow, type_col) if hrow is not None else ""
         bucket = _bucket(ot)
-        mov = tables.movements[
-            tables.movements["Order"].astype(str).str.strip() == order
-        ]
+        mov = tables.movements[tables.movements["Order"].astype(str).str.strip() == order]
 
         inv = _scan_inversion(order, ot, mov)
         if inv:
             inversions.append(inv)
 
         if tables.bom is not None and tables.missrate is not None:
-            missrate_anoms.extend(
-                _scan_missrate(order, mov, tables.bom, missrate_map, hrow)
-            )
+            missrate_anoms.extend(_scan_missrate(order, mov, tables.bom, missrate_map, hrow))
         elif tables.bom is not None and is_bulk_rows(mov):
             notes.append(f"{order}: 大發料存在但缺 Miss Rate（RD 不得假設 0%）")
 
@@ -236,9 +232,7 @@ def scan_rd_risks(tables: RdTables, *, sample_limit: int = 50) -> RdScanResult:
         "abnormal_order_count": len(anomalous_orders),
         "material_abnormal_amount": round(abnormal_amount, 2),
         "compliance_rate": (
-            round(100 * (len(orders) - len(anomalous_orders)) / len(orders), 2)
-            if orders
-            else 0
+            round(100 * (len(orders) - len(anomalous_orders)) / len(orders), 2) if orders else 0
         ),
     }
 
@@ -282,17 +276,13 @@ def _missrate_map(df: pd.DataFrame | None) -> dict[str, float]:
     for _, row in df.iterrows():
         key = str(row[pn]).strip()
         try:
-            out[key] = float(row[rate]) / (
-                100.0 if float(row[rate]) > 1 else 1.0
-            )
+            out[key] = float(row[rate]) / (100.0 if float(row[rate]) > 1 else 1.0)
         except (TypeError, ValueError):
             continue
     return out
 
 
-def _scan_inversion(
-    order: str, order_type: str, mov: pd.DataFrame
-) -> dict[str, Any] | None:
+def _scan_inversion(order: str, order_type: str, mov: pd.DataFrame) -> dict[str, Any] | None:
     if mov.empty:
         return None
     dates = pd.to_datetime(mov["Posting Date"], errors="coerce")
