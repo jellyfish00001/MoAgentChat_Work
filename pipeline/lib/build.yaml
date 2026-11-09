@@ -24,7 +24,8 @@
     - DOCKERFILE=${DOCKERFILE:-$SERVICE_NAME/Dockerfile}
     - REPO=${HARBOR_URL}/${HARBOR_PROJECT}/${IMAGE_PATH}/${IMAGE_NAME} # 完整名稱是 $REPO-<環境>
     # 原始碼指紋：服務資料夾內容相同就相同，用來找出「QAS 測過的就是這份程式碼」的 image
-    - SRC_ID=src-$(find $SERVICE_NAME -type f | sort | xargs sha256sum | sha256sum | cut -c1-12)
+    # -print0／-0：檔名可能含空格（例如 server/testdata 的 Excel）
+    - SRC_ID=src-$(find $SERVICE_NAME -type f -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -c1-12)
 
 # 父類別：build image 並推到 Harbor（QAS 用）
 # 子類別設定 DEPLOY_ENV（環境）、DEPLOY_BRANCH（觸發分支）、SERVICE_NAME，

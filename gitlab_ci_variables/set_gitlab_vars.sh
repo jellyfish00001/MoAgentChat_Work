@@ -20,7 +20,8 @@ set_var() { # key value
   local masked=false
   [[ $1 =~ PASSWORD|TOKEN|SECRET ]] && masked=true
   local args=(-s -o /dev/null -w "%{http_code}" -H "PRIVATE-TOKEN: $GITLAB_TOKEN"
-    --form "key=$1" --form "value=$2" --form "masked=$masked" --form "protected=false")
+    --form "key=$1" --form "value=$2" --form "masked=$masked" --form "protected=false"
+    --form "raw=true") # robot 帳號含 $，不 raw 會被 GitLab 當成變數展開
   local code
   code=$(curl -X PUT "${args[@]}" "$API/$1")              # 先嘗試更新
   [ "$code" = "404" ] && code=$(curl -X POST "${args[@]}" "$API")  # 不存在就新增
