@@ -28,6 +28,26 @@ prd-promote-frontend:
         - pipeline/**/*
         - .gitlab-ci.yml
 
+.prd-scheduler-rules:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - scheduler/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+prd-promote-scheduler-api:
+  extends: [.promote-image, .prd, .prd-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-api
+
+prd-promote-scheduler-job:
+  extends: [.promote-image, .prd, .prd-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-job
+
 # 打版本號 tag 時，每個服務的 PRD image 都加上版本號
 prd-tag-server:
   extends: [.tag-version, .prd]
@@ -38,6 +58,18 @@ prd-tag-frontend:
   extends: [.tag-version, .prd]
   variables:
     SERVICE_NAME: frontend
+
+prd-tag-scheduler-api:
+  extends: [.tag-version, .prd]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-api
+
+prd-tag-scheduler-job:
+  extends: [.tag-version, .prd]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-job
 
 # prd-secret-scan:
 #   extends: [.secret-scan, .prd]

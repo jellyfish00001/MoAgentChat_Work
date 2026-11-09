@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+.vs/
+*.user
+# 本機 DB 不進 image；k8s 上 DB 放在 PVC
+*.sqlite
+*.sqlite-*
+**/appsettings.Development.json
+**/Properties/launchSettings.json

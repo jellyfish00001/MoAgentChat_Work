@@ -23,7 +23,9 @@ COPY . .
 # NEXT_PUBLIC_* 會在 build 時寫死進前端，所以只放「所有環境都一樣」的值：
 # - /api：瀏覽器打同網域的 /api，再由 Next.js 轉給後端（後端網址在執行時用 LANGGRAPH_API_URL 設定）
 # - agent：server/langgraph.json 裡 graph 的名稱
+# - /schedule-api：排程 API 一樣走同網域 proxy（Scheduler 網址在執行時用 SCHEDULE_API_URL 設定）
 ENV NEXT_PUBLIC_API_URL=/api \
+    NEXT_PUBLIC_SCHEDULE_API_URL=/schedule-api \
     NEXT_PUBLIC_ASSISTANT_ID=agent \
     NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
@@ -58,7 +60,7 @@ ARG BUILD_ID=local
 ENV BUILD_ID=${BUILD_ID}
 LABEL build-id=${BUILD_ID}
 
-# LANGGRAPH_API_URL：後端在 k8s 裡的網址，部署時設定（例如 http://finagent-server:8000）
+# LANGGRAPH_API_URL／SCHEDULE_API_URL：後端在 k8s 裡的網址，部署時設定（例如 http://mo-agentchat-server:8000）
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \

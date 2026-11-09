@@ -108,7 +108,8 @@ app.MapPost("/api/internal/schedules/process-due", async (HttpRequest req, ISche
     return Results.Ok(new { processed = n });
 });
 
-app.Run("http://127.0.0.1:5055");
+// k8s 由 ASPNETCORE_URLS 指定（容器內要聽 0.0.0.0）；本機預設只聽 loopback
+app.Run(app.Configuration["urls"] ?? "http://127.0.0.1:5055");
 
 /// <summary>比對 X-Job-Key；本機可用固定開發值。</summary>
 static bool CheckJobKey(HttpRequest req, string expected)

@@ -39,7 +39,7 @@ export function runScheduleDraftParserTests(): {
       failures.push(`${c.input}: expected draft, got null`);
       continue;
     }
-    for (const [k, v] of Object.entries(c.expect)) {
+    for (const [k, v] of Object.entries(c.expect ?? {})) {
       if ((got as Record<string, unknown>)[k] !== v) {
         failures.push(
           `${c.input}: ${k} expected ${v}, got ${(got as Record<string, unknown>)[k]}`,
