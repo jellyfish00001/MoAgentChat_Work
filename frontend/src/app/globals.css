@@ -1,0 +1,232 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+/*
+ * Wistron UI themes via [data-theme].
+ * Semantic tokens only — components must use these, not raw gray/white/hex.
+ */
+
+:root,
+[data-theme="wistron-light"] {
+  /* Soft cool white paper */
+  --background: #eef3f5;
+  --foreground: #1a2c34;
+  --panel: color-mix(in srgb, #ffffff 78%, #d0dde4 22%);
+  --panel-foreground: #1a2c34;
+  --card: color-mix(in srgb, #ffffff 82%, #d2e0e6 18%);
+  --card-foreground: #1a2c34;
+  --popover: color-mix(in srgb, #ffffff 84%, #d2e0e6 16%);
+  --popover-foreground: #1a2c34;
+  --primary: #3d7388;
+  --primary-foreground: #f5f8fa;
+  --secondary: #d9e3e8;
+  --secondary-foreground: #1a2c34;
+  --muted: #d9e3e8;
+  --muted-foreground: #5a707a;
+  --accent: #7eae52;
+  --accent-foreground: #152018;
+  --accent-muted: #5a7a30;
+  --destructive: #b54a44;
+  --destructive-foreground: #ffffff;
+  --border: #c2d0d7;
+  --input: #c2d0d7;
+  --ring: #7eae52;
+  --radius: 1rem;
+  --sidebar: color-mix(in srgb, #ffffff 75%, #d5e0e6 25%);
+  --sidebar-foreground: #1a2c34;
+  --sidebar-primary: #3d7388;
+  --sidebar-primary-foreground: #f5f8fa;
+  --sidebar-accent: #d9e3e8;
+  --sidebar-accent-foreground: #1a2c34;
+  --sidebar-border: #c2d0d7;
+  --sidebar-ring: #7eae52;
+  --chart-1: #7eae52;
+  --chart-2: #3d7388;
+  --chart-3: #1a2c34;
+  --chart-4: #eef3f5;
+  --chart-5: #a3c97a;
+  --ascii-bg: #e8eef2;
+  /* Softer grid — barely there on frosted paper */
+  --ascii-grid: rgba(61, 115, 136, 0.045);
+  --ascii-dot-1: 90 130 145;
+  --ascii-dot-2: 110 135 95;
+  --ascii-dot-3: 120 155 165;
+  --ascii-dot-4: 85 120 130;
+  --ascii-wake: 100 140 150;
+  --ascii-accent: #8fbc7a;
+  /* Soft teal-green — further muted */
+  --ascii-fish: 78 118 100;
+  /* Light: black-blue vignette only (clear center, navy rim — no green) */
+  --spotlight-center: transparent;
+  --spotlight-edge: color-mix(in srgb, #152a38 8%, transparent);
+  --spotlight-rim: color-mix(in srgb, #07141c 13%, transparent);
+}
+
+[data-theme="wistron-dark"] {
+  /* Lifted navy — less near-black */
+  --background: #152a36;
+  --foreground: #e8f2f6;
+  --panel: #1c3a4a;
+  --panel-foreground: #e8f2f6;
+  --card: #1c3a4a;
+  --card-foreground: #e8f2f6;
+  --popover: #1c3a4a;
+  --popover-foreground: #e8f2f6;
+  --primary: #42a9c7;
+  --primary-foreground: #0f1e26;
+  --secondary: #254a5c;
+  --secondary-foreground: #e8f2f6;
+  --muted: #254a5c;
+  --muted-foreground: #9bb4c9;
+  --accent: #a7dd6c;
+  --accent-foreground: #0f1e26;
+  --accent-muted: #7aad45;
+  --destructive: #e03a32;
+  --destructive-foreground: #ffffff;
+  --border: #2a5568;
+  --input: #2a5568;
+  --ring: #a7dd6c;
+  --sidebar: #1c3a4a;
+  --sidebar-foreground: #e8f2f6;
+  --sidebar-primary: #a7dd6c;
+  --sidebar-primary-foreground: #0f1e26;
+  --sidebar-accent: #254a5c;
+  --sidebar-accent-foreground: #e8f2f6;
+  --sidebar-border: #2a5568;
+  --sidebar-ring: #a7dd6c;
+  --ascii-bg: #122633;
+  /* Softer grid on deep navy */
+  --ascii-grid: rgba(66, 169, 199, 0.055);
+  --ascii-dot-1: 70 140 165;
+  --ascii-dot-2: 120 170 100;
+  --ascii-dot-3: 90 125 145;
+  --ascii-dot-4: 140 170 185;
+  --ascii-wake: 70 140 165;
+  --ascii-accent: #8fbc70;
+  --ascii-fish: 140 175 190;
+  /* Dark: green accent halo + soft depth rim */
+  --spotlight-center: color-mix(in srgb, var(--accent) 8%, transparent);
+  --spotlight-edge: color-mix(in srgb, var(--accent) 3%, transparent);
+  --spotlight-rim: color-mix(in srgb, #061018 6%, transparent);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-panel-foreground: var(--panel-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-muted: var(--accent-muted);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius));
+  --radius-md: calc(var(--radius) + 1px);
+  --radius-lg: calc(var(--radius) + 2px);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .shadow-inner-right {
+    box-shadow: inset -9px 0 6px -1px color-mix(in srgb, var(--foreground) 6%, transparent);
+  }
+
+  .shadow-inner-left {
+    box-shadow: inset 9px 0 6px -1px color-mix(in srgb, var(--foreground) 6%, transparent);
+  }
+
+  .scrollbar-ocean {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .scrollbar-ocean::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* 隱藏系統捲軸上下箭頭；僅內容超出時才出現細軌道（配合 overflow-y-auto） */
+  .scrollbar-ocean::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .scrollbar-ocean::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 999px;
+  }
+
+  .scrollbar-ocean::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* 側欄列表：可滾動但不顯示滾輪條 */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  /*
+   * Spotlight — light: navy vignette; dark: green core (theme tokens).
+   * Overlay sits above chat scroll (z-5).
+   */
+  .spotlight-focus {
+    pointer-events: none;
+    background:
+      radial-gradient(
+        ellipse 48% 40% at 50% 38%,
+        var(--spotlight-center) 0%,
+        transparent 58%
+      ),
+      radial-gradient(
+        ellipse 92% 88% at 50% 50%,
+        transparent 28%,
+        var(--spotlight-edge) 62%,
+        var(--spotlight-rim) 100%
+      );
+  }
+}

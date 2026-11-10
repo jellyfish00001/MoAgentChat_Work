@@ -1,0 +1,78 @@
+# PRD：push 到 prd 分支（主分支）時推廣 QAS 測過的 image；打 v*.*.* tag 時加上版本號
+# 不跑 lint：程式碼在合併到 qas 時已經檢查過
+.prd:
+  variables:
+    DEPLOY_ENV: prd
+    DEPLOY_BRANCH: prd
+
+# 跟 qas.yaml 一樣，每個服務一個 job，只推廣有改到的服務
+prd-promote-server:
+  extends: [.promote-image, .prd]
+  variables:
+    SERVICE_NAME: server
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - server/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+prd-promote-frontend:
+  extends: [.promote-image, .prd]
+  variables:
+    SERVICE_NAME: frontend
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - frontend/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+.prd-scheduler-rules:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - scheduler/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+prd-promote-scheduler-api:
+  extends: [.promote-image, .prd, .prd-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-api
+
+prd-promote-scheduler-job:
+  extends: [.promote-image, .prd, .prd-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-job
+
+# 打版本號 tag 時，每個服務的 PRD image 都加上版本號
+prd-tag-server:
+  extends: [.tag-version, .prd]
+  variables:
+    SERVICE_NAME: server
+
+prd-tag-frontend:
+  extends: [.tag-version, .prd]
+  variables:
+    SERVICE_NAME: frontend
+
+prd-tag-scheduler-api:
+  extends: [.tag-version, .prd]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-api
+
+prd-tag-scheduler-job:
+  extends: [.tag-version, .prd]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-job
+
+# prd-secret-scan:
+#   extends: [.secret-scan, .prd]
+
+# prd-trivy-dockerfile-scan:
+#   extends: [.trivy-dockerfile-scan, .prd]

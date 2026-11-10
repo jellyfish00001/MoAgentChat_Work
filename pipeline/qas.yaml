@@ -1,0 +1,65 @@
+# QAS：開 MR 到 qas 或 merge 進 qas 時跑 lint；merge 後 build image
+.qas:
+  variables:
+    DEPLOY_ENV: qas
+    DEPLOY_BRANCH: qas
+
+qas-lint:
+  extends: [.lint, .qas]
+
+qas-pytest-domain:
+  extends: [.pytest-domain, .qas]
+
+# 每個服務一個 build job：只有改到該服務的資料夾才 build
+# 改到 pipeline/ 或 .gitlab-ci.yml 時全部重新 build（CI 本身變了）
+# 新增服務：複製一個 job，改 SERVICE_NAME 和 changes 的資料夾
+qas-build-server:
+  extends: [.build-image, .qas]
+  variables:
+    SERVICE_NAME: server
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - server/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+qas-build-frontend:
+  extends: [.build-image, .qas]
+  variables:
+    SERVICE_NAME: frontend
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - frontend/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+# scheduler 一個資料夾出兩個 image（Api／Job），共用同一份原始碼
+.qas-scheduler-rules:
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+      changes:
+        - scheduler/**/*
+        - pipeline/**/*
+        - .gitlab-ci.yml
+
+qas-build-scheduler-api:
+  extends: [.build-image, .qas, .qas-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-api
+    DOCKERFILE: scheduler/AiPrepare.Scheduler.Api/Dockerfile
+
+qas-build-scheduler-job:
+  extends: [.build-image, .qas, .qas-scheduler-rules]
+  variables:
+    SERVICE_NAME: scheduler
+    IMAGE_NAME: scheduler-job
+    DOCKERFILE: scheduler/AiPrepare.Scheduler.Job/Dockerfile
+
+# qas-secret-scan:
+#   extends: [.secret-scan, .qas]
+
+# qas-trivy-dockerfile-scan:
+#   extends: [.trivy-dockerfile-scan, .qas]

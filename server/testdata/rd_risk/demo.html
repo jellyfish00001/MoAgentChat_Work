@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rework & Dismantle工單風險分析報告｜2026/09</title>
+<style>
+:root{--bg:#0b1220;--panel:#111c2e;--line:#263954;--text:#eaf1fb;--muted:#91a4bd;--cyan:#45d6e8;--green:#4ade80;--yellow:#fbbf24;--red:#fb7185;--purple:#a78bfa}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#172a47 0,#0b1220 36%);color:var(--text);font:12px/1.55 "Segoe UI","Microsoft JhengHei",sans-serif}.wrap{width:min(1450px,94vw);margin:24px auto 50px}header{display:flex;justify-content:space-between;gap:20px;align-items:flex-end;margin-bottom:18px}h1{font-size:25px;margin:0 0 5px}h2{font-size:16px;margin:0 0 12px}.sub,.small{color:var(--muted)}.sub{font-size:12px}.small{font-size:11px}.badge{border:1px solid #2f5477;color:var(--cyan);padding:7px 11px;border-radius:20px;background:#102238}.grid6{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}.card,.panel{background:linear-gradient(145deg,rgba(22,36,58,.96),rgba(14,25,42,.96));border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px #0003}.card{padding:13px;min-height:95px}.label{color:var(--muted);font-size:11px}.value{font-size:25px;font-weight:700;margin-top:7px}.red{color:var(--red)}.green{color:var(--green)}.yellow{color:var(--yellow)}.cyan{color:var(--cyan)}.section{margin-top:18px}.two{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-width:1120px;align-items:stretch;height:570px;overflow:visible}.panel{padding:16px}.three>.panel{height:570px;min-width:0;overflow:hidden}.insight{padding:11px 12px;border-left:3px solid var(--cyan);background:#102036;margin:9px 0;border-radius:7px}.conclusion{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-bottom:1px solid #243550}.ico{font-size:16px}.barrow{display:grid;grid-template-columns:105px minmax(0,1fr) 58px;gap:6px;align-items:center;margin:6px 0;font-size:11px}.barbg{height:15px;border-radius:9px;background:#22334c;overflow:hidden}.bar{height:100%;border-radius:9px;background:linear-gradient(90deg,var(--cyan),var(--purple))}.moneybar{background:linear-gradient(90deg,var(--red),#fb923c)}.risk{padding:8px;border-radius:9px;margin:5px 0;border:1px solid;font-size:11px}.three>.panel h2{font-size:14px}.three>.panel .small{font-size:10px}.high{border-color:#9f3b50;background:#3a1826}.mid{border-color:#8d6d22;background:#342816}.low{border-color:#326b56;background:#122b25}table{width:100%;border-collapse:collapse;white-space:nowrap}th{text-align:left;color:#9fb6d0;background:#182a43;position:sticky;top:0}th,td{padding:7px 8px;border-bottom:1px solid #253751}tr:hover td{background:#1a2d47}.tablewrap{overflow:auto;max-height:440px;border:1px solid #263954;border-radius:8px}.tabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}button{cursor:pointer;background:#15263e;color:#bdd1e8;border:1px solid #2d496b;border-radius:7px;padding:7px 10px;font-size:11px}button.active,button:hover{background:#1b6076;color:#fff;border-color:var(--cyan)}.hidden{display:none}.action td{white-space:normal;min-width:100px;vertical-align:top}@media(max-width:1100px){.grid6{grid-template-columns:repeat(3,1fr)}.two{grid-template-columns:1fr}}@media(max-width:600px){.grid6{grid-template-columns:repeat(2,1fr)}header{display:block}body{overflow-x:auto}}
+.root-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:8px}.root-card{padding:10px;border:1px solid #263954;border-left:3px solid var(--cyan);border-radius:8px;background:#102036;font-size:11px;line-height:1.55}.root-card b{color:#eaf1fb}.root-card .red,.root-card .yellow,.root-card .cyan{font-weight:600}</style>
+</head>
+<body>
+<div class="wrap">
+<header><div><div class="sub">🕵️‍♀️ 內控管理儀表板</div><h1>Rework & Dismantle工單風險分析報告</h1><div class="sub">📅 統計周期：2026年09月　｜　快速識別流程、物料、成本與超期風險</div></div><div class="badge">F721 · 10筆工單 · 資料已完成關聯</div></header>
+
+<section class="grid6">
+<div class="card"><div class="label">📦 工單總數</div><div class="value">10</div><div class="small">5筆 Rework + 5筆 Dismantle</div></div>
+<div class="card"><div class="label">🔧 返工工單</div><div class="value">5 <span class="small">(50.0%)</span></div><div class="small">Order Type = ZMPR</div></div>
+<div class="card"><div class="label">🧩 拆解工單</div><div class="value">5 <span class="small">(50.0%)</span></div><div class="small">Order Type = ZMPD</div></div>
+<div class="card"><div class="label">⚠️ 異常工單</div><div class="value red">9 <span class="small">(90.0%)</span></div><div class="small">去重後，含超期KPI</div></div>
+<div class="card"><div class="label">💰 物料異常金額</div><div class="value red">¥4,893.99</div><div class="small">調帳 ¥4,890.60 · 挪用 ¥3.39</div></div>
+<div class="card"><div class="label">✅ 整體合規率</div><div class="value yellow">10.0%</div><div class="small">無異常工單 1 / 10</div></div>
+</section>
+<div class="insight" style="margin-top:14px;border-left-color:var(--green)"><b>✅ 統計一致性校驗：</b>異常工單共9筆（90.0%），合規工單1筆（97121321），整體合規率10.0%；KPI卡片與異常明細附件已一致。</div>
+
+<section class="section two">
+<div class="panel"><h2>🧭 綜合研判</h2>
+<div class="insight"><b>現況小結：</b>本月共10筆工單，返工與拆解各5筆，非標準作業占比 <strong class="cyan">100.0%</strong>。風險滲透率 <strong class="red">90.0%</strong>，目前不可視為可控狀態。</div>
+<div class="insight"><b>突出問題：</b>超期KPI涉及 <strong class="red">6筆</strong>；異常調帳涉及 <strong class="red">4筆</strong>並產生 ¥4,890.60；物料挪用涉及 <strong class="red">1筆</strong>。未識別流程倒置與拆解異常。</div>
+<div class="root-grid">
+<div class="root-card"><b>📦 發料／庫房端</b><br>
+<b>問題：</b>*A/*B庫位多筆261領料超過BOM合理上限。<br>
+<span class="red">風險損失：</span>庫存帳務失真、物料超耗，推高生產成本。<br>
+<span class="cyan">改善：</span>建立BOM上限攔截；超耗須填原因碼並由庫房主管核准。</div>
+<div class="root-card"><b>🧩 BOM／物料端</b><br>
+<b>問題：</b>MDMDP不在97139354 Rework BOM範圍。<br>
+<span class="red">風險損失：</span>物料歸屬不清、帳料不符，形成內控漏洞。<br>
+<span class="cyan">改善：</span>工程維護BOM白名單；PMC、庫房發料前共同核對。</div>
+<div class="root-card"><b>⏱️ PC／PMC端</b><br>
+<b>問題：</b>6筆工單已結案但超過KPI。<br>
+<span class="yellow">風險損失：</span>過期與呆滯風險，影響排程及產能。<br>
+<span class="cyan">改善：</span>到期前2天預警；逾期須指定責任人與完成日期。</div>
+<div class="root-card"><b>🏭 生產／產線端</b><br>
+<b>問題：</b>包材、輔料超耗集中於少數工單。<br>
+<span class="red">風險損失：</span>標準用量失真、重工成本增加，產線管控弱化。<br>
+<span class="cyan">改善：</span>每日回報實耗；工程月度檢討Qty per與Miss Rate。</div>
+</div>
+</div>
+<div class="panel"><h2>📌 重要結論</h2>
+<div class="conclusion"><span class="ico green">✅</span><div><b class="green">流程倒置：未發現。</b><br><span class="small">101入庫與261領料未符合指定流程倒置判斷條件。</span></div></div>
+<div class="conclusion"><span class="ico red">⚠️</span><div><b class="red">異常調帳：4筆工單。</b><br><span class="small">異常金額 ¥4,890.60。</span></div></div>
+<div class="conclusion"><span class="ico red">⚠️</span><div><b class="red">物料挪用：1筆工單。</b><br><span class="small">97139354 的MDMDP不在Rework BOM範圍內，¥3.39。</span></div></div>
+<div class="conclusion"><span class="ico yellow">⚠️</span><div><b class="yellow">超期KPI：6筆工單。</b><br><span class="small">5筆ZMPD超過14天，1筆ZMPR超過5.5天。</span></div></div>
+<div class="conclusion"><span class="ico green">✅</span><div><b class="green">拆解異常：未發現。</b><br><span class="small">5筆ZMPD的531拆解料均可對應BOM，Key Parts亦有相符紀錄。</span></div></div>
+</div>
+</section>
+
+<section class="section three" aria-label="固定三欄：異常工單發生數量排行、異常金額料號TOP10、TOP5風險分級">
+<div class="panel"><h2>📊 異常工單發生數量排行</h2>
+<div class="barrow"><span>超期KPI</span><div class="barbg"><div class="bar" style="width:100%"></div></div><b>6</b></div>
+<div class="barrow"><span>異常調帳</span><div class="barbg"><div class="bar" style="width:67%"></div></div><b>4</b></div>
+<div class="barrow"><span>物料挪用</span><div class="barbg"><div class="bar" style="width:17%"></div></div><b>1</b></div>
+<div class="barrow"><span>流程倒置</span><div class="barbg"><div class="bar" style="width:0%"></div></div><b>0</b></div>
+<div class="barrow"><span>拆解異常</span><div class="barbg"><div class="bar" style="width:0%"></div></div><b>0</b></div>
+<p class="small">💡 超期KPI發生筆數最多；異常調帳貢獻幾乎全部可量化損失。</p></div>
+<div class="panel"><h2>💸 異常金額料號 TOP10</h2>
+<div class="barrow"><span>6N1C9</span><div class="barbg"><div class="bar moneybar" style="width:100%"></div></div><b>¥1,065.69</b></div>
+<div class="barrow"><span>444.00H01.0011</span><div class="barbg"><div class="bar moneybar" style="width:97%"></div></div><b>¥1,035.00</b></div>
+<div class="barrow"><span>42.4C611.001</span><div class="barbg"><div class="bar moneybar" style="width:88%"></div></div><b>¥939.23</b></div>
+<div class="barrow"><span>69G5P</span><div class="barbg"><div class="bar moneybar" style="width:48%"></div></div><b>¥514.42</b></div>
+<div class="barrow"><span>3WVRJ</span><div class="barbg"><div class="bar moneybar" style="width:35%"></div></div><b>¥371.07</b></div>
+<div class="barrow"><span>NJXX0</span><div class="barbg"><div class="bar moneybar" style="width:28%"></div></div><b>¥299.62</b></div>
+<div class="barrow"><span>96MW1</span><div class="barbg"><div class="bar moneybar" style="width:19%"></div></div><b>¥206.31</b></div>
+<div class="barrow"><span>450D6</span><div class="barbg"><div class="bar moneybar" style="width:10%"></div></div><b>¥108.67</b></div>
+<div class="barrow"><span>440.0YS18.0001</span><div class="barbg"><div class="bar moneybar" style="width:8%"></div></div><b>¥88.96</b></div>
+<div class="barrow"><span>440.0JD1T.0001</span><div class="barbg"><div class="bar moneybar" style="width:6%"></div></div><b>¥62.00</b></div>
+<p class="small">💡 <b>高金額物料重點：</b><br>
+🔹 <b>6N1C9、444.00H01.0011｜外箱／紙箱包材：</b>合計¥2,100.69；改善批量換算、包裝標準與領料上限。<br>
+🔹 <b>42.4C611.001｜ESD防靜電袋：</b>¥939.23；改善領料批次核對與實際包裝數量管控。<br>
+🔹 <b>69G5P、3WVRJ｜緩衝／LCD保護包材：</b>合計¥885.49；改善機種別用量標準與損耗原因碼。<br>
+🔹 <b>管理要求：</b>由PMC、庫房、生產、工程BOM共同完成高金額物料專案核對，設定系統上限與主管核准門檻。</p></div>
+<div class="panel"><h2>🚦 TOP5風險分級</h2>
+<div class="risk high"><b>極高｜97139354</b><br>調帳¥2,715.80＋挪用¥3.39，多項包材／輔料超出上限。</div>
+<div class="risk high"><b>極高｜97104924</b><br>調帳¥1,929.23，且已結案超過KPI。</div>
+<div class="risk mid"><b>中等｜97111212</b><br>調帳¥170.59，超耗集中於LCD保護膜、PE袋、紙箱。</div>
+<div class="risk mid"><b>中等｜97107226</b><br>調帳¥74.99，需核對批量與BOM用量。</div>
+<div class="risk low"><b>低｜其餘ZMPD</b><br>無可量化調帳／挪用金額，但皆已結案超KPI。</div></div>
+</section>
+
+<section class="section panel"><h2>🧰 管理行動清單</h2>
+<div class="tablewrap"><table class="action"><thead><tr><th>風險級</th><th>優先級</th><th>工單號碼</th><th>異常類別</th><th>異常描述與證據</th><th>異常金額</th><th>責任單位</th><th>管理行動</th><th>完成期限</th><th>狀態</th></tr></thead><tbody>
+<tr><td class="red">高</td><td>P1</td><td>97139354</td><td>異常調帳＋物料挪用</td><td>多項*A/*B庫位261數量高於BOM×工單量；MDMDP 46件不在Rework BOM。</td><td class="red">¥2,719.19</td><td>PMC／庫房／工程BOM</td><td>5個工作日內逐料號核對工單量、BOM版本、領料單與實際包材耗用；對MDMDP補提BOM變更或退料／轉帳依據。</td><td>2026/10/25</td><td class="yellow">進行中</td><td class="remark" contenteditable="true" spellcheck="false" aria-label="remark"></td></tr>
+<tr><td class="red">高</td><td>P1</td><td>97104924</td><td>異常調帳＋超期KPI</td><td>261數量2,820／282，高於合理上限1,500／150；耗時6天高於KPI 5.5天。</td><td class="red">¥1,929.23</td><td>生產／庫房／PC</td><td>3個工作日內覆核批量與BOM用量，完成超耗原因碼及KPI逾期說明。</td><td>2026/10/25</td><td class="yellow">進行中</td><td class="remark" contenteditable="true" spellcheck="false" aria-label="remark"></td></tr>
+<tr><td class="yellow">中</td><td>P2</td><td>97111212</td><td>異常調帳</td><td>261數量超出60、60、6件，合計異常金額¥170.59。</td><td class="yellow">¥170.59</td><td>生產／庫房</td><td>核對LCD保護膜與包材領料批次，建立批量領料上限。</td><td>2026/10/25</td><td class="yellow">待改善</td><td class="remark" contenteditable="true" spellcheck="false" aria-label="remark"></td></tr>
+<tr><td class="yellow">中</td><td>P2</td><td>97107226</td><td>異常調帳</td><td>多項包材261數量超出BOM合理上限10～20件。</td><td class="yellow">¥74.99</td><td>工程BOM／PMC</td><td>確認BOM單位用量與50台工單批量，建立包材領料上限清單。</td><td>2026/10/25</td><td class="yellow">待改善</td><td class="remark" contenteditable="true" spellcheck="false" aria-label="remark"></td></tr>
+<tr><td class="yellow">中</td><td>P2</td><td>97101219、97101222、97101285、97101300、97101305、97104924</td><td>超期KPI</td><td>6筆已結案工單超過KPI；5筆ZMPD耗時24～26天，97104924耗時6天。</td><td>—</td><td>PC／PMC</td><td>建立到期前2天提醒、逾期原因碼及週會紅燈清單，逐筆回溯排程、待料與拆解等待時間。</td><td>2026/10/25</td><td class="yellow">進行中</td><td class="remark" contenteditable="true" spellcheck="false" aria-label="remark"></td></tr>
+</tbody></table></div></section>
+
+<section class="section panel"><h2>📎 異常明細附件</h2>
+<div class="insight" style="border-left-color:var(--green)"><b>✅ 金額一致性校驗：</b>TOP10料號金額與異常調帳明細均依「實際數量－BOM合理上限」乘以物料單價計算，並以料號跨工單彙總；6N1C9為¥1,065.69，444.00H01.0011為¥1,035.00。</div><div class="insight" style="border-left-color:var(--green)"><b>✅ 金額一致性校驗：</b>TOP10料號金額為異常調帳明細依料號彙總值；其中6N1C9為¥1,065.69、444.00H01.0011為¥1,035.00，明細與圖表採相同計算口徑。</div>
+<div class="tabs"><button class="active" data-tab="overview">📋 工單總覽</button><button data-tab="due">⏱️ 超期KPI（6）</button><button data-tab="adj">💸 異常調帳</button><button data-tab="misuse">🔄 物料挪用</button><button data-tab="flow">🔁 流程倒置</button><button data-tab="dismantle">🧩 拆解異常</button></div>
+
+<div id="overview" class="tab"><div class="tablewrap"><table><thead><tr><th>Order</th><th>Type</th><th>Type名稱</th><th>Matl group</th><th>建立日</th><th>結案日</th><th>耗時</th><th>判斷</th><th>PC</th></tr></thead><tbody>
+<tr><td>97101219</td><td>ZMPD</td><td>Dismantle MO with header</td><td>B</td><td>2026/9/1</td><td>2026/9/27</td><td>26天</td><td class="red">超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101222</td><td>ZMPD</td><td>Dismantle MO with header</td><td>B</td><td>2026/9/1</td><td>2026/9/27</td><td>26天</td><td class="red">超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101285</td><td>ZMPD</td><td>Dismantle MO with header</td><td>B</td><td>2026/9/1</td><td>2026/9/27</td><td>26天</td><td class="red">超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101300</td><td>ZMPD</td><td>Dismantle MO with header</td><td>B</td><td>2026/9/1</td><td>2026/9/25</td><td>24天</td><td class="red">超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101305</td><td>ZMPD</td><td>Dismantle MO with header</td><td>B</td><td>2026/9/1</td><td>2026/9/27</td><td>26天</td><td class="red">超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97104924</td><td>ZMPR</td><td>Rework MO</td><td>9</td><td>2026/9/2</td><td>2026/9/8</td><td>6天</td><td class="red">超期＋調帳</td><td>Grace SS Wang</td></tr>
+<tr><td>97107226</td><td>ZMPR</td><td>Rework MO</td><td>S</td><td>2026/9/3</td><td>2026/9/4</td><td>1天</td><td class="red">調帳</td><td>Ratke Han</td></tr>
+<tr><td>97111212</td><td>ZMPR</td><td>Rework MO</td><td>9</td><td>2026/9/4</td><td>2026/9/9</td><td>5天</td><td class="red">調帳</td><td>Deming Dai</td></tr>
+<tr><td>97121321</td><td>ZMPR</td><td>Rework MO</td><td>9</td><td>2026/9/10</td><td>2026/9/15</td><td>5天</td><td class="green">合規</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>ZMPR</td><td>Rework MO</td><td>S</td><td>2026/9/19</td><td>2026/9/23</td><td>4天</td><td class="red">調帳＋挪用</td><td>Grace SS Wang</td></tr>
+</tbody></table></div></div>
+
+<div id="due" class="tab hidden"><div class="tablewrap"><table><thead><tr><th>Order</th><th>Type</th><th>Matl group</th><th>實際天數</th><th>KPI Days</th><th>System Status</th><th>PC</th></tr></thead><tbody>
+<tr><td>97101219</td><td>ZMPD</td><td>B</td><td>26</td><td>14</td><td class="red">已結案但超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101222</td><td>ZMPD</td><td>B</td><td>26</td><td>14</td><td class="red">已結案但超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101285</td><td>ZMPD</td><td>B</td><td>26</td><td>14</td><td class="red">已結案但超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101300</td><td>ZMPD</td><td>B</td><td>24</td><td>14</td><td class="red">已結案但超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97101305</td><td>ZMPD</td><td>B</td><td>26</td><td>14</td><td class="red">已結案但超期</td><td>CDRPAMM03</td></tr>
+<tr><td>97104924</td><td>ZMPR</td><td>9</td><td>6</td><td>5.5</td><td class="red">已結案但超期</td><td>Grace SS Wang</td></tr>
+</tbody></table></div></div>
+
+<div id="adj" class="tab hidden"><div class="insight" style="border-left-color:var(--green)"><b>✅ 料號金額核對：</b>本明細按工單／料號逐筆列示；TOP10則按相同料號跨工單彙總。6N1C9合計¥1,065.69，444.00H01.0011合計¥1,035.00，NJXX0合計¥299.62，96MW1合計¥206.31，440.0JD1T.0001合計¥62.00。</div><div class="tablewrap"><table><thead><tr><th>Order</th><th>Material</th><th>261/262</th><th>實際數量</th><th>BOM合理上限</th><th>超出量</th><th>單價</th><th>異常金額</th><th>PC</th></tr></thead><tbody>
+<tr><td>97104924</td><td>42.4C611.001</td><td>261</td><td>2,820</td><td>1,500</td><td>1,320</td><td>¥0.7115</td><td class="red">¥939.23</td><td>Grace SS Wang</td></tr>
+<tr><td>97104924</td><td>444.00H01.0011</td><td>261</td><td>282</td><td>150</td><td>132</td><td>¥7.5000</td><td class="red">¥990.00</td><td>Grace SS Wang</td></tr>
+<tr><td>97107226</td><td>3C6K7</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥2.9543</td><td class="red">¥29.54</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>440.0JD1T.0001</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥0.1642</td><td class="red">¥1.64</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>5X4J9</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥0.5582</td><td class="red">¥5.58</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>7NKX1</td><td>261</td><td>120</td><td>100</td><td>20</td><td>¥1.0112</td><td class="red">¥20.22</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>96MW1</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥0.5473</td><td class="red">¥5.47</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>NJXX0</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥0.7948</td><td class="red">¥7.95</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>RWPV3</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥0.0925</td><td class="red">¥0.93</td><td>Ratke Han</td></tr>
+<tr><td>97107226</td><td>Y25K3</td><td>261</td><td>60</td><td>50</td><td>10</td><td>¥0.3657</td><td class="red">¥3.66</td><td>Ratke Han</td></tr>
+<tr><td>97111212</td><td>440.0YS18.0001</td><td>261</td><td>920</td><td>860</td><td>60</td><td>¥1.4827</td><td class="red">¥88.96</td><td>Deming Dai</td></tr>
+<tr><td>97111212</td><td>442.0P301.0001</td><td>261</td><td>920</td><td>860</td><td>60</td><td>¥0.6104</td><td class="red">¥36.62</td><td>Deming Dai</td></tr>
+<tr><td>97111212</td><td>444.00H01.0011</td><td>261</td><td>92</td><td>86</td><td>6</td><td>¥7.5000</td><td class="red">¥45.00</td><td>Deming Dai</td></tr>
+<tr><td>97139354</td><td>08A.00000.00KQ</td><td>261</td><td>2,160</td><td>156</td><td>2,004</td><td>¥0.0199</td><td class="red">¥39.87</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>3WVRJ</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥1.0111</td><td class="red">¥371.07</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>440.0JD1T.0001</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥0.1645</td><td class="red">¥60.35</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>450D6</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥0.2961</td><td class="red">¥108.67</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>69G5P</td><td>261</td><td>786</td><td>52</td><td>734</td><td>¥0.7008</td><td class="red">¥514.42</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>6N1C9</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥2.9038</td><td class="red">¥1065.69</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>86.00E13.524</td><td>261</td><td>1,700</td><td>130</td><td>1,570</td><td>¥0.0166</td><td class="red">¥26.09</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>86.00S84.323</td><td>261</td><td>400</td><td>208</td><td>192</td><td>¥0.0165</td><td class="red">¥3.16</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>96MW1</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥0.5472</td><td class="red">¥200.83</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>NJXX0</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥0.7948</td><td class="red">¥291.68</td><td>Grace SS Wang</td></tr>
+<tr><td>97139354</td><td>RWPV3</td><td>261</td><td>393</td><td>26</td><td>367</td><td>¥0.0925</td><td class="red">¥33.96</td><td>Grace SS Wang</td></tr>
+</tbody></table></div></div>
+
+<div id="misuse" class="tab hidden"><div class="insight red">⚠️ 物料挪用：97139354 的MDMDP，實際數量46，異常金額¥3.39，不在Rework BOM範圍。</div></div>
+<div id="flow" class="tab hidden"><div class="insight green">✅ 流程倒置：未發現。101入庫與261領料時序未符合流程倒置定義。</div></div>
+<div id="dismantle" class="tab hidden"><div class="insight green">✅ 拆解異常：未發現。5筆ZMPD之531拆解料均可對應BOM，Key Parts亦有拆解紀錄。</div></div>
+</section>
+
+<div class="small" style="margin-top:16px">🔎 判斷口徑：異常調帳分析Storage location以A或B結尾之261／262，並依Movement type分開與BOM合理上限比較；Miss Rate優先取ZPP329設定。本批分析料號皆有設定且為0%。金額以交易金額／實際數量估算單價。</div>
+</div>
+<script>
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll("[data-tab]").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll(".tab").forEach(x=>x.classList.add("hidden"));
+ b.classList.add("active");document.getElementById(b.dataset.tab).classList.remove("hidden");
+});
+</script>
+</body>
+</html>

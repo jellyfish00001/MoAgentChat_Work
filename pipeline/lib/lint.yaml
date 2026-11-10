@@ -1,0 +1,17 @@
+# 父類別：Python lint（ruff），設定在 server/ruff.toml
+# 子類別只要 extends 這個 job，並設定 DEPLOY_BRANCH
+# 觸發時機：push 到 DEPLOY_BRANCH，或開 MR 要合併到 DEPLOY_BRANCH
+.lint:
+  stage: lint
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH
+    - if: $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $DEPLOY_BRANCH
+  image: ${HARBOR_URL}/base_image/python:3.12-trixie # 公司 base image，已內建 Nexus pip 設定
+  tags:
+    - k8s-runners
+  variables:
+    RUFF_VERSION: "0.16.9"
+  script:
+    - pip install --no-cache-dir --quiet ruff==$RUFF_VERSION
+    - ruff check server/ # 程式碼問題：未使用的 import、可能的 bug 等
+    - ruff format --check server/ # 排版是否一致（本機可用 ruff format server/ 自動修正）

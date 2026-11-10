@@ -1,0 +1,33 @@
+.env
+.env.local
+**/.env
+!**/.env.example
+
+__pycache__/
+*.pyc
+.ruff_cache/
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# langgraph dev 本機執行時產生的對話紀錄
+.langgraph_api/
+server/.langgraph_api/
+server/outputs/
+
+# Node / frontend
+node_modules/
+.next/
+*.tsbuildinfo
+# next dev 會自動重生；不納入正式專案文件
+frontend/AGENTS.md
+frontend/CLAUDE.md
+
+# Agent / IDE — 個人本機工作區，勿推送以免衝突
+.claude/*
+.cursor/
+/AGENTS.md
+*.log
+.DS_Store
+Thumbs.db
+*.bat

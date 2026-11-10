@@ -1,0 +1,48 @@
+/* Markdown styles — semantic tokens only */
+
+.markdown-content code:not(pre code) {
+  background-color: color-mix(in srgb, var(--muted) 80%, transparent);
+  color: var(--foreground);
+  padding: 0.2em 0.4em;
+  border-radius: var(--radius);
+  font-size: 0.9em;
+}
+
+.markdown-content a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.markdown-content a:hover {
+  text-decoration: underline;
+  color: var(--accent-muted);
+}
+
+.markdown-content blockquote {
+  border-left: 4px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.markdown-content pre {
+  overflow-x: auto;
+}
+
+.markdown-content table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.markdown-content th,
+.markdown-content td {
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+
+.markdown-content th {
+  background-color: var(--muted);
+}
+
+.markdown-content tr:nth-child(even) {
+  background-color: color-mix(in srgb, var(--muted) 50%, transparent);
+}

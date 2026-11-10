@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+.claude/
+# 金鑰只放本機 .env 或 Vault，不能進 image
+.env
+.env.*
+!.env.example

@@ -1,0 +1,3 @@
+# Dev / CI only (not required in runtime image)
+-r requirements.txt
+pytest>=8.0
