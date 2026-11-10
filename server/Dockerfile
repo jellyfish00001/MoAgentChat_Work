@@ -26,12 +26,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt && pip uninstall -y pip
 
 COPY graph.py langgraph.json ./
-# 正式契約僅註冊 agent；flows 提供共用 LLM factory（config + llm）
+# agent + 3 個財務 graph；財務 graph 讀 testdata 的 Excel 作為 QAS 示範資料
 COPY flows ./flows
+COPY testdata ./testdata
 
-# langgraph dev（in-memory）會把 thread/checkpoint 寫在 .langgraph_api/，要讓 USER 1000 可寫
-# k8s 開 readOnlyRootFilesystem 時，這個資料夾和 /tmp 都要掛 emptyDir
-RUN mkdir -p .langgraph_api && chown 1000:1000 .langgraph_api
+# langgraph dev（in-memory）會把 thread/checkpoint 寫在 .langgraph_api/，財務 graph 報表寫在 outputs/，都要讓 USER 1000 可寫
+# k8s 開 readOnlyRootFilesystem 時，這兩個資料夾和 /tmp 都要掛 emptyDir
+RUN mkdir -p .langgraph_api outputs && chown 1000:1000 .langgraph_api outputs
 
 # build 編號（CI 傳入），label 讓 PRD 推廣時能沿用同一個編號
 ARG BUILD_ID=local

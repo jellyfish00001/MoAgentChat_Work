@@ -9,7 +9,6 @@
 .env.*
 .langgraph_api/
 outputs/
-# 測試資料不進正式 image；flows 程式需進 image（graph.py 共用 llm factory）
-testdata/
+# QAS 財務 graph 需讀 testdata，故 testdata 進 image；單元測試不進
 tests/
 langgraph.dev.json

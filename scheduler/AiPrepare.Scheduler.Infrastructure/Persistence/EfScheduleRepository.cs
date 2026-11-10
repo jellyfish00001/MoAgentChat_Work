@@ -65,7 +65,8 @@ public sealed class EfScheduleRepository : IScheduleRepository
         CancellationToken ct = default)
     {
         // SQLite 無法轉譯 DateTimeOffset 比較 → 先載入 Enabled 再篩選
-        var rows = await _db.Schedules.Where(x => x.Enabled).ToListAsync(ct);
+        // 必須 AsNoTracking：Executor 之後會用 GetAsync 取另一個實例再 Update，若這裡有追蹤會 Id 衝突
+        var rows = await _db.Schedules.AsNoTracking().Where(x => x.Enabled).ToListAsync(ct);
         return rows
             .Where(x => x.NextRunAt <= untilUtc)
             .Where(x => includeCompany || x.Scope == ScheduleScope.User)

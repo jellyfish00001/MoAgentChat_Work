@@ -1,7 +1,10 @@
 {
   "dependencies": ["."],
   "graphs": {
-    "agent": "./graph.py:agent"
+    "agent": "./graph.py:agent",
+    "rework_mo_detective": "./flows/graphs/rework_mo_detective/graph.py:graph",
+    "rd_risk_dashboard": "./flows/graphs/rd_risk_dashboard/graph.py:graph",
+    "qv_dms_pipeline": "./flows/graphs/qv_dms_pipeline/graph.py:graph"
   },
   "env": ".env"
 }
