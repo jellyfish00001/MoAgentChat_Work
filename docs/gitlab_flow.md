@@ -76,7 +76,7 @@ flowchart LR
 ```
 
 > **現況（本 repo）**：`lint`（ruff）+ `verify`（`pytest server/tests/domain`，不呼叫 LLM）+ build／promote。下表含長期目標能力（Sonar／Cosign 等），尚未全部啟用。  
-> **正式部署**：僅 `langgraph.json` 的 `agent`；業務 graphs／`testdata` 不進正式執行契約（pytest 仍測 `flows/domain`）。
+> **QAS 部署**：`langgraph.json` 註冊 `agent` 與 3 個財務 graph，`testdata` 打包進 server image 作為示範資料（pytest 仍測 `flows/domain`）。
 
 | Stage | 內容 | MR | develop | tag |
 |---|---|:-:|:-:|:-:|
