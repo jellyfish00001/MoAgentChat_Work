@@ -1,0 +1,15 @@
+---
+description: Next.js app-router practices for agent-chat-ui (adapted from awesome next-js.mdc)
+globs: frontend/**/*.{ts,tsx,js,jsx}
+alwaysApply: false
+---
+
+# Next.js / Chat UI（改編自 sanjeed5 `next-js.mdc`）
+
+適用目錄：`frontend/`（官方 agent-chat-ui）。
+
+- Prefer App Router；Server Components 預設，`"use client"` 放在互動邊界最底層。
+- 勿把 secrets 放進 `NEXT_PUBLIC_*`；`LANGSMITH_API_KEY` 僅 server／proxy。
+- 本機連線：Deployment URL `http://localhost:2024`；Graph ID 必須是 `langgraph.json` 鍵名。
+- React/SVG：DOM 屬性用 camelCase（例如 `clipPath` 不是 `clip-path`）。
+- 改 vendor 行為時維持可回上游的小 diff；說明見 `docs/CHAT_UI使用說明.md`。

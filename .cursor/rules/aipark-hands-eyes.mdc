@@ -1,0 +1,13 @@
+---
+description: Hands-eyes — never claim LLM/graph/LangSmith/UI success without real evidence
+alwaysApply: true
+---
+
+# Hands / Eyes
+
+- Do not claim the LLM, LangGraph server, LangSmith traces, or chat UI work unless you actually ran them or saw evidence.
+- On failure: report the real error (token, APIM, model, network, import). Do not invent success.
+- Record smoke results in `.cursor/temp/verify-log.md` (no secrets).
+- Prefer MCP `langsmith` (`list_projects` / `fetch_runs`) to verify tracing when available.
+- **UI 變更**：截圖存 `.cursor/temp/ui-shots/`（或子目錄）；必須用 **Read 打開圖片** 做視覺驗收，不可只憑指令 exit code 宣稱 UI 正確或好看。
+- 多階段計畫另見 `aipark-phase-delivery` 與 `guides/phase-delivery.md`。

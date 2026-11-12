@@ -1,0 +1,12 @@
+---
+description: TypeScript strictness for frontend/ (adapted from awesome typescript.mdc)
+globs: frontend/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript（改編自 sanjeed5 `typescript.mdc`）
+
+- Prefer `strict` tsconfig；避免 `any`，未知資料用 `unknown` 再收窄。
+- Props／API payload 用明確 interface 或 type；公開函式標回傳型別。
+- 與 LangGraph SDK 互動時對 `messages`／thread／assistantId 做空值檢查。
+- 不把 API keys 打進 client bundle 或 commit。

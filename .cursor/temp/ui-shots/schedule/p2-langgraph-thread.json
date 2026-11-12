@@ -1,0 +1,103 @@
+﻿{
+    "thread_id":  "01a1a5fe-dda2-722a-8467-105389cd8566",
+    "created_at":  "2026-11-04T09:58:25.954371+00:00",
+    "updated_at":  "2026-11-04T09:58:29.592761+00:00",
+    "state_updated_at":  "2026-11-04T09:58:29.592761+00:00",
+    "metadata":  {
+                     "graph_id":  "agent",
+                     "source":  "schedule",
+                     "schedule_id":  "2854ea81-733e-466d-87ff-960ae14f99f1",
+                     "schedule_title":  "P2 due smoke",
+                     "user_id":  "local-demo-user",
+                     "assistant_id":  "fe096781-5601-53d2-b2f6-0d3403f7e9ca"
+                 },
+    "status":  "idle",
+    "config":  {
+                   "configurable":  {
+
+                                    }
+               },
+    "values":  {
+                   "messages":  [
+                                    {
+                                        "content":  "Reply with exactly: schedule-ok",
+                                        "additional_kwargs":  {
+
+                                                              },
+                                        "response_metadata":  {
+
+                                                              },
+                                        "type":  "human",
+                                        "name":  null,
+                                        "id":  "95ad47d6-b06e-473a-a4a5-62646f00fd57"
+                                    },
+                                    {
+                                        "content":  "schedule-ok",
+                                        "additional_kwargs":  {
+                                                                  "refusal":  null
+                                                              },
+                                        "response_metadata":  {
+                                                                  "token_usage":  {
+                                                                                      "completion_tokens":  6,
+                                                                                      "prompt_tokens":  270,
+                                                                                      "total_tokens":  276,
+                                                                                      "completion_tokens_details":  {
+                                                                                                                        "accepted_prediction_tokens":  null,
+                                                                                                                        "audio_tokens":  null,
+                                                                                                                        "reasoning_tokens":  0,
+                                                                                                                        "rejected_prediction_tokens":  null,
+                                                                                                                        "text_tokens":  null
+                                                                                                                    },
+                                                                                      "prompt_tokens_details":  {
+                                                                                                                    "audio_tokens":  null,
+                                                                                                                    "cache_write_tokens":  0,
+                                                                                                                    "cached_tokens":  0,
+                                                                                                                    "image_tokens":  null,
+                                                                                                                    "text_tokens":  null,
+                                                                                                                    "cache_creation_tokens":  0
+                                                                                                                }
+                                                                                  },
+                                                                  "model_provider":  "openai",
+                                                                  "model_name":  "gpt-6-luna",
+                                                                  "system_fingerprint":  null,
+                                                                  "id":  "resp_0a772ebcddb22c97006aeb01c434448190affb8049b5f52c27",
+                                                                  "service_tier":  "default",
+                                                                  "finish_reason":  "stop",
+                                                                  "logprobs":  null,
+                                                                  "content_filter_results":  {
+
+                                                                                             }
+                                                              },
+                                        "type":  "ai",
+                                        "name":  null,
+                                        "id":  "lc_run--01a1a5fe-e174-762b-9093-07420a114360-0",
+                                        "tool_calls":  [
+
+                                                       ],
+                                        "invalid_tool_calls":  [
+
+                                                               ],
+                                        "usage_metadata":  {
+                                                               "input_tokens":  270,
+                                                               "output_tokens":  6,
+                                                               "total_tokens":  276,
+                                                               "input_token_details":  {
+                                                                                           "cache_read":  0,
+                                                                                           "cache_creation":  0
+                                                                                       },
+                                                               "output_token_details":  {
+                                                                                            "reasoning":  0
+                                                                                        }
+                                                           }
+                                    }
+                                ],
+                   "ui":  [
+
+                          ],
+                   "llm_calls":  1
+               },
+    "error":  null,
+    "interrupts":  {
+
+                   }
+}

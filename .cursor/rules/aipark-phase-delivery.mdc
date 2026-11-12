@@ -1,0 +1,51 @@
+---
+description: Multi-phase delivery gates — test, screenshot Read, git per phase; no fake-done
+alwaysApply: true
+---
+
+# Phase delivery（多階段交付門檻）
+
+適用：使用者確認的多步驟計畫、功能分期、排程／前後端聯調等。以後規劃**不必再重講**下列規則。
+
+## 憲法
+
+1. **一階段做完才算完**：該階段範圍全部實作 + 測試過門；禁止「先做完再列一堆未完成」。
+2. **未過門不得進下一階段**：缺證據、UI 錯／醜、測試失敗 → 當場修。
+3. **每階段 git**：計畫若授權分期交付，該階段過門後必須 `commit`（conventional）且 **`push`**；一小階段一推。若計畫未授權 push，則只 commit 或依 USER 當次指示。
+4. **禁止假完成**：回報只能是「本階段 PASS／FAIL + 缺口」；不得用未完成清單冒充結案。
+5. **任務不中斷**：開始執行後依計畫跑完所有階段（含最終總驗收）；中途失敗停在該階段修理，不跳過。
+
+## 每階段順序
+
+```text
+實作 → 自動化／API 或 Playwright 測試 → 截圖存 temp
+  → Agent Read 圖片做視覺驗收 → 追加 verify-log → commit+push（若已授權）
+```
+
+## UI／截圖手眼
+
+- 有 UI 變更的階段：Playwright（或 CDP／browser）截圖，存 `.cursor/temp/ui-shots/`（功能子目錄如 `schedule/`）。
+- **必須用 Read 打開 png** 檢查布局、對齊、對比、半成品；不可只寫「測試通過」。
+- 美觀否決（任一成立＝FAIL）：溢出、裁切、對比不足、硬編碼色破壞 design tokens、明顯佔位未完成。
+
+## 程式品質（防 Agent 糊弄）
+
+- 模組化、可讀、可維護；禁止複製第二套管線、巨石單檔、無分層「一檔寫完」。
+- Job／Controller 保持薄；業務在 Application／Domain（見 `guides/scheduler-coding.md`）。
+- 註解：繁中、**每方法必有**；複雜方法加內部區段註解（`aipark-docs-comments`）；長規範放 `.cursor/guides/`。
+- 本階段 git 訊息：conventional + **繁中**說明。
+
+## temp 保留與清理
+
+| 路徑 | 規則 |
+|------|------|
+| `temp/verify-log.md` | 只追加，不刪 |
+| `temp/ui-shots/`（含子目錄） | 圖片只供測試當下檢視，檢視後刪除，不保留歷史圖或代表圖；verify-log 記文字結論即可 |
+| `temp/pw-langsmith-profile/` | 永不刪 |
+| `temp/open-decisions.md` | 僅保留有效待辦；已解決項目移除或摘要 |
+| 舊架構報告、重複過門範本 | 未完成事項摘要至 open-decisions；規範已在 guides 時可刪除副本 |
+| 一次性 debug 雜檔 | 可清 |
+
+## 最終結案
+
+計畫全部階段 push 後，再跑一次總驗收；缺一不可宣稱「計畫完成」。

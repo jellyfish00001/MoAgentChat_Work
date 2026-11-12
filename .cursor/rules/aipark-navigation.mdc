@@ -1,0 +1,12 @@
+---
+description: mo_agentchat navigation — read MAP first, avoid blind full-repo scans
+alwaysApply: true
+---
+
+# Navigation
+
+- Start from `.cursor/MAP.md` (or root `AGENTS.md` → MAP).
+- Prefer `@` specific paths over whole-repo search.
+- Large Excel / HTML / prompt dumps: read README or targeted sections only.
+- Sample Excel lives under `server/testdata/`; implementation lives under `server/flows/` and `frontend/`.
+- Formal deploy contract: `server/langgraph.json`. Local development: `server/langgraph.dev.json`. Both currently register `agent` and three business graphs; verify the files before changing the deployment contract.

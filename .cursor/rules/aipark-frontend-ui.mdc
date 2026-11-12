@@ -1,0 +1,18 @@
+---
+description: Frontend Wistron UI theme & component conventions
+globs: frontend/**/*.{tsx,ts,css}
+alwaysApply: false
+---
+
+# Frontend UI（W.AgentChat）
+
+（原 `frontend/UI-THEME.md` 併入此 rule；`frontend/` 不放指引 md。）
+
+- Themes: `html[data-theme]` = `wistron-light`（**default**）｜`wistron-dark`。
+- Tokens 只在 `frontend/src/app/globals.css`；優先 `components/ui/*` 與 semantic classes（`bg-panel`、`bg-accent`、`bg-background`、`text-foreground`、`border-border`…）。
+- 功能頁禁止 `bg-white`／`gray-*`／散落 hex。
+- Accent（企業綠）= CTA／選取／焦點；綠鈕用 `text-accent-foreground`。
+- Light = frosted／desaturated；Dark = deep navy。
+- ASCII：鯊身小寫 `wistron`（略透）；魚群 `-` 近滿不透明；色票 `--ascii-*`。
+- Controls 偏軟圓角；icon 鈕 `rounded-full`。LangChain mark 預設 icon-only。
+- Legacy `wistron-classic`／`wistron` 存值遷移為 Light。

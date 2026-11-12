@@ -1,0 +1,43 @@
+---
+description: Docs placement + 中文方法註解（每方法必有；複雜區段加註）
+alwaysApply: true
+---
+
+# Docs placement & comments
+
+## Where writing goes
+
+| Place | Put |
+|-------|-----|
+| `.cursor/` | Tech / Agent norms, layer boundaries, skills, local scripts, review notes |
+| Root `README` / `docs/` | Project status, ops, GitLab/deploy, informal flow templates |
+| `frontend/` / `server/` / `scheduler/` | **Code only**（含下方中文註解政策）。禁止在這些樹下堆 theme／vendor／how-to 長文 `.md` |
+| Source comments | 見下「Comments」；長規範只放 `.cursor/guides/` |
+
+- Business open questions for the human owner: `docs/flow-templates/OPEN-QUESTIONS.md`（勿倒 Agent／技術待決）。
+- Agent／架構待決：`.cursor/temp/open-decisions.md`。
+- Frontend theme → `aipark-frontend-ui.mdc`；vendor／upstream → `aipark-agent-chat.mdc`。
+
+## Comments（強制；繁體中文）
+
+對齊使用者要求：**程式註解以繁中為主**；與「只寫 why」並存——方法頭寫責任／合約，內部複雜區段寫 why。
+
+### 最低門檻（缺＝FAIL／須補完再 commit）
+
+1. **每個公開／內部方法**（含函式、hook、handler、Job `Run*`、Controller／minimal API 對應的本地函式）都要有**繁中**註解：  
+   - C#：`/// <summary>…</summary>` 或方法正上方 `// …`  
+   - TS／TSX：方法／函式正上方 `/** … */` 或 `// …`
+2. **複雜方法**（分支多、IO、claim／交易、解析、非直覺演算法）：方法內用短繁中**區段註解**標出步驟（例如「1. 認領」「2. 呼叫 LangGraph」），說明 **why／約束**，不要逐行複述語法。
+3. **檔案／型別**：檔首或 class／module 一句責任（繁中可）。
+4. **禁止**：把長篇架構文、SOLID 清單、runbook 貼進業務檔；英語-only 方法註解不足以過門（專有名詞／API 名可保留英文）。
+
+### 仍避免
+
+- 下一行「把 x 加一」式敘事註解。
+- 為通過 CS1591 灌水的無意義英文 XML。
+
+### Git 訊息
+
+- 計畫授權或使用者要求 commit 時：**conventional 前綴 + 繁中說明**（例：`feat(scheduler): 分層 Api／Job 與 SQLite`）。
+
+Sources: 專案使用者偏好；Cursor project rules；見 `.cursor/SOURCES.md`。

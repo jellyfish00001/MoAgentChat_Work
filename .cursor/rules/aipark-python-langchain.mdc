@@ -1,0 +1,17 @@
+---
+description: Python + LangChain conventions for backend
+globs: server/**/*.py
+alwaysApply: false
+---
+
+# Python / LangChain
+
+- Python 3.11+ with type hints on public functions.
+- Use `pydantic` v2 / `pydantic-settings` for config and structured outputs.
+- Import specifically (`from langchain_openai import AzureChatOpenAI`); never `from langchain import *`.
+- Prefer LCEL / Runnables; **do not** use deprecated `LLMChain` or legacy `AgentExecutor` as the main path.
+- LLM calls go through `flows.llm.azure_apim` only — nodes must not construct clients ad hoc.
+- Agent tools with IO / `interrupt` live in `flows/tools/`; their pure rules go in `flows/domain/`; config via `flows.config.Settings` (no ad-hoc `os.getenv`). Side-effecting tools (e.g. `send_mail`) must `interrupt` for user approval first — see `.cursor/guides/mail-tool.md`.
+- Prefer `with_structured_output(PydanticModel)` over fragile regex parsing.
+- Use Ruff for lint/format; add pytest for domain logic.
+- Never hardcode secrets; load via settings / dotenv.

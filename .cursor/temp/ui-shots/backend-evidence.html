@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"/><title>Backend smoke evidence</title>
+<style>body{font-family:Segoe UI,sans-serif;margin:2rem;background:#0f172a;color:#e2e8f0} pre{background:#1e293b;padding:1rem;border-radius:8px}</style>
+</head>
+<body>
+<h1>LangGraph backend smoke (2026-10-29)</h1>
+<p>GET http://127.0.0.1:2024/ok → ok:true</p>
+<p>POST /assistants/search → agent, rework_mo_detective, rd_risk_dashboard, qv_dms_pipeline</p>
+<p>runs/wait rework_mo_detective → 7 messages, persist node wrote outputs</p>
+<pre id="p">loading…</pre>
+<script>
+fetch('assistants-search.json').then(r=>r.json()).then(j=>{
+  document.getElementById('p').textContent = JSON.stringify(j.slice(0,4), null, 2);
+}).catch(e=>{ document.getElementById('p').textContent = String(e); });
+</script>
+</body>
+</html>

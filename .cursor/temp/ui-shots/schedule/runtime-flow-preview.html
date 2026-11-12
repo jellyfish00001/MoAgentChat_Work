@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"/>
+<title>schedule-db runtime flow preview</title>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({
+    startOnLoad: true,
+    flowchart: { useMaxWidth: true, nodeSpacing: 20, rankSpacing: 32, padding: 8 }
+  });
+</script>
+<style>
+  body { font-family: "Segoe UI", "Microsoft JhengHei", sans-serif; margin: 16px; background: #1e1e1e; color: #ddd; max-width: 560px; }
+  h2, h3 { color: #eee; font-size: 1.1rem; }
+  .box { border: 1px solid #444; border-radius: 8px; padding: 12px; margin: 12px 0; background: #252526; overflow: auto; }
+  .mermaid { margin: 0; }
+</style>
+</head>
+<body>
+  <h2>執行期資料怎麼流動（預覽驗收 · 560px）</h2>
+  <h3>1. 誰寫入 Schedules</h3>
+  <div class="box"><pre class="mermaid">
+flowchart TD
+  subgraph W1["寫入端"]
+    direction TB
+    UiWrite[使用者 API 建立／修改 · Scope=User]
+    CoWrite[內部 API 建公司排程 · Scope=Company]
+    Scan[Job 掃到期並認領 · 讀寫 NextRunAt]
+    ExecLast[Executor 結束 · 寫 LastRunAt]
+    UiWrite --> CoWrite --> Scan --> ExecLast
+  end
+  ExecLast --> S[(Schedules)]
+  </pre></div>
+  <h3>2. 誰寫入 ScheduleRuns</h3>
+  <div class="box"><pre class="mermaid">
+flowchart TD
+  Exec[Executor 跑 LangGraph]
+  Exec -->|Running／結果／threadId| R[(ScheduleRuns)]
+  Exec --> Notify[INotificationSender · Draft]
+  Notify -->|NotifyOutcome| R
+  </pre></div>
+  <h3>3. 誰讀這兩張表</h3>
+  <div class="box"><pre class="mermaid">
+flowchart TD
+  UiRead[使用者列表／徽章 · Scope=User]
+  CoRead[維運列表公司排程 · Scope=Company]
+  UiRead --> CoRead
+  UiRead --> S[(Schedules)]
+  CoRead --> S
+  S --> R[(ScheduleRuns · 側欄／徽章亦讀)]
+  </pre></div>
+</body>
+</html>

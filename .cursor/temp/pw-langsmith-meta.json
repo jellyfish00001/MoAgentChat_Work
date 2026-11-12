@@ -1,0 +1,8 @@
+{
+  "cdpPort": 9333,
+  "cdpUrl": "http://127.0.0.1:9333",
+  "profileDir": "D:\\ai_prepare\\.cursor\\temp\\pw-langsmith-profile",
+  "formalUrl": "https://columbus-langsmith.wistron.com/o/f679e495-9a73-469f-a922-f4c3b165ff3a",
+  "studioUrl": "https://smith.langchain.com/studio/?baseUrl=http://127.0.0.1:2025",
+  "startedAt": "2026-10-22T07:40:55.016Z"
+}

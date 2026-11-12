@@ -1,0 +1,6 @@
+﻿{
+    "thread_id":  "01a18695-cb90-76a8-881d-27fe3bcb9c27",
+    "message_count":  7,
+    "last_type":  "ai",
+    "last_preview":  "[program] `persist`\n```json\n{\n  \"node\": \"persist\",\n  \"kind\": \"program\",\n  \"inputs\": {},\n  \"outputs\": {\n    \"json\": \"D:\\\\ai_prepare\\\\server\\\\outputs\\\\rework_mo_detective.json\",\n    \"xlsx\": \"D:\\\\ai_prepare\\\\server\\\\outputs\\\\rework_mo_QV_Report-Material_reasons.xlsx\",\n    \"txt\": \"D:\\\\ai_prepare\\\\server\\\\outputs\\\\rework_mo_ææå·¥å_åææ¥å.txt\"\n  }\n}\n```"
+}

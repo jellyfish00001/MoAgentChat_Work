@@ -1,0 +1,14 @@
+---
+description: LangGraph graph/state/node conventions
+globs: server/**/graphs/**/*.py,server/**/state.py
+alwaysApply: false
+---
+
+# LangGraph
+
+- One graph package per agent: `state.py`, `nodes.py`, `graph.py`, `prompts.py`.
+- State must include `messages` with `add_messages` for agent-chat-ui compatibility.
+- Nodes are thin: call `domain/` or LLM helpers; no giant monoliths.
+- Conditional edges must be explicit; any cycle needs a max-iteration guard.
+- Export compiled graph as `graph` for `langgraph.json`.
+- Prefer subgraphs for reusable multi-step blocks later; keep MVP graphs readable.

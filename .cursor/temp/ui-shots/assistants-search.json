@@ -1,0 +1,52 @@
+﻿[
+    {
+        "assistant_id":  "e87fbb95-411e-5beb-bdc1-549690a5d3be",
+        "graph_id":  "rework_mo_detective",
+        "name":  "rework_mo_detective"
+    },
+    {
+        "assistant_id":  "fe096781-5601-53d2-b2f6-0d3403f7e9ca",
+        "graph_id":  "agent",
+        "name":  "agent"
+    },
+    {
+        "assistant_id":  "6b7e57a1-c9b8-5f9c-b77f-0e82919b1ccb",
+        "graph_id":  "rd_risk_dashboard",
+        "name":  "rd_risk_dashboard"
+    },
+    {
+        "assistant_id":  "476ba207-7195-5361-96eb-eac10b3eacb9",
+        "graph_id":  "qv_dms_pipeline",
+        "name":  "qv_dms_pipeline"
+    },
+    {
+        "assistant_id":  "e35d5136-9bd9-4a01-858e-ee1fd85e9ed7",
+        "graph_id":  "qv_dms_pipeline",
+        "name":  "qv_dms_pipeline"
+    },
+    {
+        "assistant_id":  "25a60e7f-de44-4b7d-a9fe-45b2fa2add7b",
+        "graph_id":  "rd_risk_dashboard",
+        "name":  "rd_risk_dashboard"
+    },
+    {
+        "assistant_id":  "c202de88-b035-4dbf-801e-639cf2200e7a",
+        "graph_id":  "rework_mo_detective",
+        "name":  "rework_mo_detective"
+    },
+    {
+        "assistant_id":  "b2f48230-21d0-44b4-9f9e-dccfd62a29d3",
+        "graph_id":  "agent",
+        "name":  "agent"
+    },
+    {
+        "assistant_id":  "5f0b2ecd-4582-47b9-835b-456f32d8459d",
+        "graph_id":  "qv_dms_pipeline",
+        "name":  "qv_dms_pipeline"
+    },
+    {
+        "assistant_id":  "af700e7f-bbaa-4d09-8d49-84c2a749f4eb",
+        "graph_id":  "rd_risk_dashboard",
+        "name":  "rd_risk_dashboard"
+    }
+]

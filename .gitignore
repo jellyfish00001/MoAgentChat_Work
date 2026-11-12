@@ -25,7 +25,13 @@ frontend/CLAUDE.md
 
 # Agent / IDE — 個人本機工作區，勿推送以免衝突
 .claude/*
-.cursor/
+# Keep reusable Cursor project guidance, rules, skills, and scripts.
+!.cursor/
+!.cursor/**
+# Keep local credentials and generated browser state out of the repository.
+.cursor/mcp.json
+.cursor/temp/pw-langsmith-profile/
+.cursor/temp/pw-tools/node_modules/
 /AGENTS.md
 *.log
 .DS_Store

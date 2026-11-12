@@ -1,0 +1,23 @@
+---
+description: Playwright E2E / CDP session practices (adapted from awesome-cursor-rules-mdc)
+globs: **/*playwright*,**/*.spec.ts,.cursor/scripts/local-dev/start-playwright*.mjs,.cursor/scripts/local-dev/pw-*.mjs
+alwaysApply: false
+---
+
+# Playwright（改編自 sanjeed5/awesome-cursor-rules-mdc `playwright.mdc`）
+
+## 正式 E2E 測試
+
+- Prefer `@playwright/test` + web-first `expect`；避免硬等 `waitForTimeout`。
+- Locators：`getByRole` / `getByLabel` / `getByTestId`；少用脆弱 CSS。
+- 重複流程可抽 Page Object；測試彼此隔離。
+
+## 本專案：LangSmith 持久登入（非 E2E 套件）
+
+- 固定 CDP：**9333**；profile：`.cursor/temp/pw-langsmith-profile/`。
+- 啟動：`pwsh .cursor/scripts/local-dev/start-playwright-langsmith.ps1`（`--formal` + `--studio`）
+- 正式環境：`https://columbus-langsmith.wistron.com/o/f679e495-9a73-469f-a922-f4c3b165ff3a`
+- 檢查：`node .cursor/scripts/local-dev/pw-check-studio.mjs`
+- Studio URL 必須含本機 `baseUrl`（例：`http://127.0.0.1:2025` 或 `:2024`）
+- 勿把 Tracing 專案 `ai_prepare` 當成 Studio agent。
+- 細節：`.cursor/guides/playwright-langsmith.md`
