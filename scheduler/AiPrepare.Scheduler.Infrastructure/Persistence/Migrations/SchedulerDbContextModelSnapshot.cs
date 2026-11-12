@@ -33,8 +33,14 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("AutoSendMail")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("DayOfMonth")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("EmailCc")
                         .HasMaxLength(1024)

@@ -486,9 +486,10 @@ export function Thread() {
                           ? scheduleComposer.cancelDraft
                           : () => undefined
                       }
-                      onConfirm={async () => {
+                      onConfirm={async (autoSendMail) => {
                         if (!scheduleComposer.draft) return;
-                        const ok = await scheduleComposer.confirmDraft();
+                        const ok =
+                          await scheduleComposer.confirmDraft(autoSendMail);
                         if (ok) setInput("");
                       }}
                     />

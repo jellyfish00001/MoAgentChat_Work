@@ -68,7 +68,7 @@ function ScheduleRow({
         type="button"
         className="text-foreground hover:bg-muted min-w-0 flex-1 truncate rounded-md px-1.5 py-1 text-left text-sm"
         onClick={onOpenLast}
-        title={item.title}
+        title={`${item.title}｜信件自動發送：${item.autoSendMail ? "開啟" : "關閉"}`}
       >
         {item.title}
       </button>
@@ -239,7 +239,10 @@ export function ScheduleSidebar({
                 )}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={6}>
+            <TooltipContent
+              side="top"
+              sideOffset={6}
+            >
               {expanded ? "摺疊聊天" : "展開聊天"}
             </TooltipContent>
           </Tooltip>
@@ -273,7 +276,10 @@ export function ScheduleSidebar({
         >
           {loading ? (
             Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="mx-1 h-8 rounded-lg" />
+              <Skeleton
+                key={i}
+                className="mx-1 h-8 rounded-lg"
+              />
             ))
           ) : sorted.length === 0 ? (
             <p className="text-muted-foreground px-3 py-1 text-xs">

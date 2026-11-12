@@ -5,6 +5,7 @@ from __future__ import annotations
 from flows.domain.mail import (
     MAX_RECIPIENTS,
     check_recipients,
+    is_auto_send_authorized,
     is_unattended_run,
     merge_edited_fields,
     normalize_addresses,
@@ -20,6 +21,15 @@ def test_is_unattended_run_only_matches_schedule_source() -> None:
     assert not is_unattended_run({"source": "chat"})
     assert not is_unattended_run({})
     assert not is_unattended_run(None)
+
+
+def test_auto_send_requires_schedule_and_explicit_boolean() -> None:
+    """自動寄送預設關閉；字串或一般對話不能偽裝授權。"""
+    assert is_auto_send_authorized({"source": "schedule", "schedule_auto_send_mail": True})
+    for value in (False, None, "true", 1):
+        assert not is_auto_send_authorized({"source": "schedule", "schedule_auto_send_mail": value})
+    assert not is_auto_send_authorized({"source": "chat", "schedule_auto_send_mail": True})
+    assert not is_auto_send_authorized(None)
 
 
 def test_parse_domains_trims_and_lowercases() -> None:

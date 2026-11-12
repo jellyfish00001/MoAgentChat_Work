@@ -8,6 +8,7 @@ export type ScheduleDraft = {
   timeOfDay: string | null;
   weekday: number | null;
   intervalHours: number | null;
+  dayOfMonth?: number | null;
   /** 確認卡上顯示的可讀摘要 */
   summary: string;
 };
@@ -79,9 +80,7 @@ function padTime(h: number, m: number): string {
 function parseClock(text: string): string | null {
   // --- 中文／混合格式（點、冒號、時）---
   const m =
-    text.match(
-      /(?:^|[^\d])(\d{1,2})\s*[:：點时時]\s*(\d{1,2})?\s*(?:分)?/,
-    ) ??
+    text.match(/(?:^|[^\d])(\d{1,2})\s*[:：點时時]\s*(\d{1,2})?\s*(?:分)?/) ??
     text.match(/(?:^|[^\d])(\d{1,2})\s*[:：](\d{2})/);
   if (m) {
     let h = Number(m[1]);
@@ -89,8 +88,7 @@ function parseClock(text: string): string | null {
     if (Number.isNaN(h) || Number.isNaN(min)) return null;
     const lower = text.toLowerCase();
     const pm =
-      /下午|晚上|傍晚|pm\b/.test(text) ||
-      (/am\b/.test(lower) ? false : false);
+      /下午|晚上|傍晚|pm\b/.test(text) || (/am\b/.test(lower) ? false : false);
     const am = /早上|上午|清晨|am\b/.test(text) || /am\b/.test(lower);
     if (pm && h < 12) h += 12;
     if (am && h === 12) h = 0;
@@ -105,9 +103,7 @@ function parseClock(text: string): string | null {
   }
 
   // --- 英文 9am / 9:30pm ---
-  const en = text.match(
-    /(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i,
-  );
+  const en = text.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
   if (en) {
     let h = Number(en[1]);
     const min = en[2] ? Number(en[2]) : 0;
@@ -130,22 +126,14 @@ function extractPrompt(text: string): string {
   if (remind?.[1]?.trim()) return remind[1].trim();
 
   const stripped = text
-    .replace(
-      /^(?:請|请)?(?:幫我|帮我)?(?:設定|设定|建立|创建|安排)?/,
-      "",
-    )
-    .replace(
-      /(?:每\s*\d+\s*小時|every\s+\d+\s+hours?)[^，,。]*[，,]?\s*/gi,
-      "",
-    )
+    .replace(/^(?:請|请)?(?:幫我|帮我)?(?:設定|设定|建立|创建|安排)?/, "")
+    .replace(/(?:每\s*\d+\s*小時|every\s+\d+\s+hours?)[^，,。]*[，,]?\s*/gi, "")
     .replace(
       /(?:每週|每星期|每周|every\s+(?:week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|wed|thu|fri|sat|sun))[^，,。]*[，,]?\s*/gi,
       "",
     )
-    .replace(
-      /(?:每天|每日|every\s+day)[^，,。]*[，,]?\s*/gi,
-      "",
-    )
+    .replace(/(?:每月|every\s+month)[^，,。]*[，,]?\s*/gi, "")
+    .replace(/(?:每天|每日|every\s+day)[^，,。]*[，,]?\s*/gi, "")
     .trim();
   return stripped || text.trim();
 }
@@ -164,7 +152,7 @@ function hasScheduleIntent(text: string): boolean {
     /每週|每星期|每周|every\s+(?:week|monday|tuesday|wednesday|thursday|friday|saturday|sunday)/i.test(
       text,
     ) ||
-    /每天|每日|every\s+day/i.test(text)
+    /每天|每日|every\s+day|每月|every\s+month/i.test(text)
   );
 }
 
@@ -175,7 +163,9 @@ function parseWeekday(text: string): number | null {
     const d = WEEKDAY_ZH[zh[1]];
     if (d !== undefined) return d;
   }
-  const zhLong = text.match(/每(?:週|星期|周)(週[一二三四五六日天]|周[一二三四五六日天])/);
+  const zhLong = text.match(
+    /每(?:週|星期|周)(週[一二三四五六日天]|周[一二三四五六日天])/,
+  );
   if (zhLong) {
     const d = WEEKDAY_ZH[zhLong[1]];
     if (d !== undefined) return d;
@@ -197,6 +187,26 @@ function parseWeekday(text: string): number | null {
 export function parseScheduleDraft(text: string): ScheduleDraft | null {
   const raw = text.trim();
   if (!raw || !hasScheduleIntent(raw)) return null;
+
+  if (/每月|every\s+month/i.test(raw)) {
+    const match =
+      raw.match(/每月\s*(\d{1,2})\s*[日號号]/) ??
+      raw.match(/every\s+month\s+(?:on\s+)?(\d{1,2})(?:st|nd|rd|th)?\b/i);
+    const dayOfMonth = match ? Number(match[1]) : 1;
+    if (dayOfMonth < 1 || dayOfMonth > 31) return null;
+    const timeOfDay = parseClock(raw) ?? "09:00:00";
+    const prompt = extractPrompt(raw);
+    return {
+      title: makeTitle(prompt),
+      prompt,
+      kind: ScheduleKind.Monthly,
+      timeOfDay,
+      weekday: null,
+      intervalHours: null,
+      dayOfMonth,
+      summary: `每月 ${dayOfMonth} 日 ${timeOfDay.slice(0, 5)}（無此日則月底） · ${prompt}`,
+    };
+  }
 
   // --- 每 N 小時（與每日／每週互斥，優先判斷）---
   const hoursMatch = raw.match(/每\s*(\d+)\s*小時|every\s+(\d+)\s+hours?/i);

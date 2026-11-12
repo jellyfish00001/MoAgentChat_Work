@@ -4,6 +4,7 @@ export enum ScheduleKind {
   Daily = 0,
   Weekly = 1,
   EveryNHours = 2,
+  Monthly = 3,
 }
 
 /** 與後端 ScheduleScope 對齊：0=個人、1=公司（一般列表不會出現公司）。 */
@@ -24,6 +25,8 @@ export type ScheduleDto = {
   timeOfDay: string | null;
   weekday: number | null;
   intervalHours: number | null;
+  dayOfMonth: number | null;
+  autoSendMail: boolean;
   enabled: boolean;
   /** 執行結束後是否走通知管線（本機 Mode=Draft 不實發）。 */
   notifyEnabled: boolean;
@@ -56,6 +59,8 @@ export type CreateSchedulePayload = {
   timeOfDay: string | null;
   weekday: number | null;
   intervalHours: number | null;
+  dayOfMonth?: number | null;
+  autoSendMail?: boolean;
   assistantId: string;
   apiUrl: string;
   notifyEnabled?: boolean;
@@ -71,6 +76,8 @@ export type PatchSchedulePayload = {
   timeOfDay?: string | null;
   weekday?: number | null;
   intervalHours?: number | null;
+  dayOfMonth?: number | null;
+  autoSendMail?: boolean;
   notifyEnabled?: boolean;
   emailTo?: string | null;
   emailCc?: string | null;
@@ -85,10 +92,7 @@ function scheduleBaseUrl(): string {
 }
 
 /** 對 Scheduler API 發送 JSON 請求；非 2xx 時拋出含 status 與 body 的 Error。 */
-async function scheduleFetch<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
+async function scheduleFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${scheduleBaseUrl()}${path}`, {
     ...init,
     headers: {

@@ -63,3 +63,8 @@ def merge_edited_fields(fields: dict[str, Any], edited: dict[str, Any]) -> dict[
 def is_unattended_run(metadata: dict[str, Any] | None) -> bool:
     """排程觸發的執行沒有人能按確認；由 run metadata 的 source 判斷。"""
     return (metadata or {}).get("source") == "schedule"
+
+
+def is_auto_send_authorized(metadata: dict[str, Any] | None) -> bool:
+    """只有排程來源且開關明確為布林 True，才可免逐封確認。"""
+    return is_unattended_run(metadata) and (metadata or {}).get("schedule_auto_send_mail") is True

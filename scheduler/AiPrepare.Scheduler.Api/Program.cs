@@ -23,6 +23,16 @@ var app = builder.Build();
 await app.Services.EnsureDbAsync();
 
 app.UseCors();
+app.Use(async (context, next) =>
+{
+    try { await next(context); }
+    catch (ArgumentException ex)
+    {
+        app.Logger.LogWarning(ex, "Invalid schedule input");
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        await context.Response.WriteAsJsonAsync(new { error = ex.Message });
+    }
+});
 
 /// <summary>健康檢查（含 DB 路徑，不含機密）；探針用 GET。</summary>
 app.MapGet("/health", () => Results.Ok(new { ok = true, db = sqlitePath }));

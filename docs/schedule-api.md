@@ -15,19 +15,19 @@
 
 ### POST ① 建立排程（寫入）
 
-按「建立／儲存」→ 新增一列 `Schedules`（含 Prompt、週期、To／Cc）。
+按「建立／儲存」→ 新增一列 `Schedules`（含 Prompt、週期、信件自動發送開關）。
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "padding": 12, "useMaxWidth": true}}}%%
 flowchart LR
-  A[填表：標題／Prompt／週期／To／Cc] --> B["POST /api/schedules"]
+  A[填表：標題／Prompt／週期／信件自動發送] --> B["POST /api/schedules"]
   B --> C[ScheduleService.Create]
   C --> D[(Schedules 新增一列)]
 ```
 
 ### POST ② 列出排程（查詢）
 
-打開側欄或刷新 → 依 body 的 `userId` **只讀**個人排程；**不會**新建列。
+打開側欄或刷新 → 依 body 的 `userId` 查詢個人排程；**不會**新建排程。若上次執行等待確認，會向 LangGraph 查詢並同步該執行狀態。
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "padding": 12, "useMaxWidth": true}}}%%
@@ -46,9 +46,11 @@ flowchart LR
 真正跑 AI 時，Job 的 due-scanner 與 UI 的「立刻執行」走**同一條** `IScheduleRunExecutor`。  
 LangGraph 結束後，若 `NotifyEnabled` 且有 `EmailTo`，再走 **確定性** `INotificationSender`（本機 Draft）。
 
-排程的 thread 與 run metadata 都會標記 `source=schedule`。目前 Agent 的 `send_mail` 會拒絕此來源的呼叫並回報原因，不會停在無人確認的卡片，也不會寄出。這不代表整個排程執行失敗；寄信工具回傳 `rejected`，排程結果通知仍維持 Draft。
+排程的 thread 與 run metadata 都標記 `source=schedule`。「信件自動發送」預設關閉，執行到 `send_mail` 時停在確認卡；`runs/wait` 回傳 2xx 後仍查詢 thread 狀態，記錄 `WaitingForConfirmation=4`（`finishedAt=null`），不當作已完成。從側欄點排程名稱可開啟該 thread 確認或取消；之後查詢排程／執行紀錄會同步完成狀態。查詢 LangGraph 失敗會回報錯誤，不冒稱完成。
 
-排程前端維持不變。動態查詢人員後寄給多人，需要另外實作事先授權的查詢範圍與寄送規則，不以固定 To／Cc 欄位替代；詳見[寄信功能](./mail.md)。
+開啟並儲存 `autoSendMail=true`，即授權下一次起的排程自動寄信。後端從資料庫讀取開關注入該次 run 的 configurable，LLM 不能從工具參數開啟；不以持久化 thread metadata 授權後續一般聊天。既有 `notifyEnabled` 是另外的執行結果 Draft 通知，與此開關不同。詳見[寄信功能](./mail.md)。
+
+週期數值維持向後相容：`Daily=0`、`Weekly=1`、`EveryNHours=2`，新增 `Monthly=3`。每月使用 `dayOfMonth`（1–31，省略預設 1）與 `timeOfDay`，以 Asia/Taipei 計算；該月無此日期則在月底執行，隔月仍依原日期計算。建立／更新的 `autoSendMail` 省略時分別為 false／不變。EF Migration 為既有資料增加欄位，不清除排程。
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 40, "rankSpacing": 70, "padding": 16}}}%%
@@ -89,7 +91,7 @@ flowchart TD
 
 | 步驟 | 誰做 | 結果 |
 |------|------|------|
-| 使用者填表 | Chat UI | 標題、Prompt、每日／每週／每 N 小時；可選通知 To／Cc |
+| 使用者填表 | Chat UI | 標題、Prompt、每日／每週／每月／每 N 小時；信件自動發送預設關閉 |
 | `POST /api/schedules` | Scheduler Api | 強制 `Scope=User`（一般使用者建不出公司排程） |
 | 寫入 DB | `ScheduleService` | 一列 `Schedules`，含首次 `NextRunAt`、`Enabled=true`、可選 `NotifyEnabled`／`EmailTo`／`EmailCc` |
 | `POST /api/schedules/list` | 同一 Api | body 帶 `userId`；**只**列出該使用者個人排程；看不到 `Scope=Company` |

@@ -41,7 +41,10 @@ export function ScheduleDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={onOpenChange}
+    >
       <DialogContent
         className={
           // 覆蓋預設：用 100dvh／100vw 扣邊距；min-h-0＋內部捲動，避免小視窗底部被裁
@@ -53,7 +56,7 @@ export function ScheduleDialog({
           <DialogDescription>
             {isEdit
               ? "修改週期、提示或暫不執行狀態。"
-              : "設定名稱、提示與執行週期。"}
+              : "設定名稱、提示、執行週期與寄信確認方式。"}
           </DialogDescription>
         </DialogHeader>
         <ScheduleForm

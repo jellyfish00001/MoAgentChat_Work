@@ -15,6 +15,9 @@ public sealed class Schedule
     public TimeOnly? TimeOfDay { get; set; }
     public DayOfWeek? Weekday { get; set; }
     public int? IntervalHours { get; set; }
+    public int? DayOfMonth { get; set; }
+    /// <summary>此排程的 Agent 寄信是否免逐封確認；預設關閉。</summary>
+    public bool AutoSendMail { get; set; }
     public string TimeZone { get; set; } = "Asia/Taipei";
     public bool Enabled { get; set; } = true;
     /// <summary>是否在執行結束後走通知管線（實際發送與否由 Notification:Mode 決定）。</summary>

@@ -1,4 +1,4 @@
-"""寄信工具 send_mail：寄出前一定先讓使用者確認（HITL），收件人只能是允許的網域。
+"""寄信工具 send_mail：對話或未開自動寄信的排程須確認，收件人只能是允許的網域。
 
 規則在 flows.domain.mail，寄信方式在 flows.tools.mail_senders；這裡只負責串接。
 """
@@ -15,7 +15,7 @@ from langgraph.types import interrupt
 from flows.config import Settings, get_settings
 from flows.domain.mail import (
     check_recipients,
-    is_unattended_run,
+    is_auto_send_authorized,
     merge_edited_fields,
     normalize_addresses,
     parse_domains,
@@ -25,15 +25,10 @@ from flows.tools.mail_senders import REQUIRED_SETTINGS, SENDERS, MailError
 MAIL_PROMPT = (
     "使用者要求寄信時用 send_mail，系統會先讓使用者確認內容，不需要另外在對話中詢問。"
     "不知道收件人 email 時要先問使用者，不要自己猜。"
-    "目前排程執行時不能用 send_mail 自動寄信，因為尚未實作排程寄送授權。"
-    "不要要求使用者改成固定收件人；動態查詢收件人的排程需另外確認寄送規則。"
+    "排程也使用 send_mail：程式依排程的信件自動發送開關決定直接寄出或等待確認。"
+    "不要在對話中先問要不要寄，直接呼叫工具，由程式處理確認。"
     "status 是 dry_run 時，要告訴使用者目前是測試模式，信沒有真的寄出。"
     "status 是 sent 時，只代表 Logic App 已受理請求，不能保證信件已送達，請提醒使用者查收。"
-)
-
-SCHEDULED_RUN_ERROR = (
-    "目前尚未實作排程寄送授權，不能用 send_mail 自動寄信。"
-    "動態或多人收件人的排程需先確認查詢範圍與寄送規則，再開放自動寄送。"
 )
 
 
@@ -77,11 +72,7 @@ def run_send_mail(
     cc: list[str] | None,
     metadata: dict[str, Any] | None = None,
 ) -> str:
-    """寄信流程本體：擋排程 → 檢查 → 使用者確認 → 再檢查 → 寄出；設定由呼叫端注入方便測試。"""
-    # 0. 排程沒有人能按確認，一律不寄（不能讓確認步驟被略過）
-    if is_unattended_run(metadata):
-        return _result("rejected", error=SCHEDULED_RUN_ERROR)
-
+    """寄信流程：檢查 → 授權排程直接寄／其他等待確認 → 再檢查 → 寄出。"""
     allowed = parse_domains(settings.mail_allowed_domains)
 
     # 1. 先檢查 LLM 給的收件人，不合規就不必打擾使用者
@@ -90,7 +81,8 @@ def run_send_mail(
         return _result("rejected", error=error)
 
     # 2. 中斷等使用者 Approve／Edit／Reject
-    approved = request_approval({"to": to, "cc": cc, "subject": subject, "body": body})
+    fields = {"to": to, "cc": cc, "subject": subject, "body": body}
+    approved = fields if is_auto_send_authorized(metadata) else request_approval(fields)
     if approved is None:
         return _result("cancelled", error="使用者取消寄信")
 
@@ -110,7 +102,7 @@ def run_send_mail(
 
 @tool
 def send_mail(to: list[str], subject: str, body: str, cc: list[str] | None = None) -> str:
-    """Send an email. The user will be asked to review and approve it before it is sent.
+    """Send an email. Requires user review unless the scheduled run has auto-send enabled.
 
     Args:
         to: Recipient email addresses.
@@ -119,7 +111,13 @@ def send_mail(to: list[str], subject: str, body: str, cc: list[str] | None = Non
         cc: Optional CC email addresses.
     """
     # LangChain 以 docstring 當 tool 描述給 LLM，故維持英文；流程見 run_send_mail
-    return run_send_mail(get_settings(), to, subject, body, cc, get_config().get("metadata"))
+    config = get_config()
+    metadata = dict(config.get("metadata") or {})
+    # thread metadata 會留在後續對話；自動授權僅取本次排程 run 的 configurable。
+    metadata["schedule_auto_send_mail"] = (
+        config.get("configurable", {}).get("schedule_auto_send_mail") is True
+    )
+    return run_send_mail(get_settings(), to, subject, body, cc, metadata)
 
 
 def load_mail_tools(settings: Settings | None = None) -> list[BaseTool]:

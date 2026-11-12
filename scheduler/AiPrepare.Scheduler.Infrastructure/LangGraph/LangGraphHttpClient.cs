@@ -47,6 +47,8 @@ public sealed class LangGraphHttpClient : ILangGraphClient
                     ["schedule_id"] = request.ScheduleId.ToString(),
                     ["schedule_title"] = request.ScheduleTitle,
                     ["user_id"] = request.UserId,
+                    ["schedule_auto_send_mail"] = request.AutoSendMail,
+                    ["schedule_run_id"] = request.ScheduleRunId?.ToString() ?? "",
                 },
             };
             using var threadRes = await client.PostAsJsonAsync("threads", threadBody, ct);
@@ -69,11 +71,21 @@ public sealed class LangGraphHttpClient : ILangGraphClient
                         new { type = "human", content = request.Prompt },
                     },
                 },
-                // run 層也帶 source=schedule，Agent 的 send_mail 靠這個判斷「沒有人能確認」而拒絕寄信
+                // 僅由排程已保存的開關注入；LLM 的 tool 參數不能開啟自動寄送。
                 metadata = new Dictionary<string, object>
                 {
                     ["source"] = "schedule",
                     ["schedule_id"] = request.ScheduleId.ToString(),
+                    ["schedule_auto_send_mail"] = request.AutoSendMail,
+                    ["schedule_run_id"] = request.ScheduleRunId?.ToString() ?? "",
+                },
+                config = new
+                {
+                    configurable = new Dictionary<string, object>
+                    {
+                        ["schedule_auto_send_mail"] = request.AutoSendMail,
+                        ["schedule_run_id"] = request.ScheduleRunId?.ToString() ?? "",
+                    },
                 },
                 stream_mode = "values",
             };
@@ -85,12 +97,31 @@ public sealed class LangGraphHttpClient : ILangGraphClient
                 return new LangGraphRunResult(threadId, false, $"run {(int)runRes.StatusCode}: {runText}");
             }
 
-            return new LangGraphRunResult(threadId, true, null);
+            return await GetThreadResultAsync(apiUrl, threadId, ct);
         }
         catch (Exception ex)
         {
             _log.LogError(ex, "LangGraph call failed for schedule {ScheduleId}", request.ScheduleId);
             return new LangGraphRunResult("", false, ex.Message);
         }
+    }
+
+        /// <summary>以持久化 thread 狀態確認 interrupt；runs/wait 的 2xx 不代表已完成。</summary>
+        public async Task<LangGraphRunResult> GetThreadResultAsync(string apiUrl, string threadId, CancellationToken ct = default)
+        {
+            var client = _httpFactory.CreateClient("langgraph");
+            var root = Environment.GetEnvironmentVariable("LANGGRAPH_API_URL") ?? apiUrl;
+            client.BaseAddress = new Uri(root.TrimEnd('/') + "/");
+            using var response = await client.GetAsync($"threads/{threadId}", ct);
+            response.EnsureSuccessStatusCode();
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync(ct));
+            var state = document.RootElement;
+            var status = state.GetProperty("status").GetString();
+            return status switch
+            {
+                "interrupted" or "busy" => new LangGraphRunResult(threadId, true, null, true),
+                "error" => new LangGraphRunResult(threadId, false, "LangGraph 對話執行失敗。"),
+                _ => new LangGraphRunResult(threadId, true, null),
+            };
     }
 }
