@@ -14,6 +14,7 @@ from typing_extensions import TypedDict
 
 from flows.llm.azure_apim import get_chat_model
 from flows.tools.mail import MAIL_PROMPT, load_mail_tools
+from flows.tools.schedule import SCHEDULE_PROMPT, create_schedule
 
 # 正式 demo agent：與業務 graphs 共用單一 LLM factory（flows.llm）
 llm = get_chat_model(temperature=0)
@@ -99,7 +100,7 @@ def get_weather(city: str) -> str:
 # Augment the LLM with tools
 # 寄信工具：沒設定 MAIL_BACKEND 時回傳空 list，不影響現有部署
 mail_tools = load_mail_tools()
-tools = [add, multiply, divide, get_weather, *mail_tools]
+tools = [add, multiply, divide, get_weather, create_schedule, *mail_tools]
 tools_by_name = {tool.name: tool for tool in tools}
 model_with_tools = llm.bind_tools(tools)
 
@@ -118,6 +119,7 @@ def llm_call(state: dict):
                     "Use write_markdown_file(filename, content) when the user asks you to create "
                     "a markdown report or downloadable markdown artifact."
                     + (MAIL_PROMPT if mail_tools else "")
+                    + SCHEDULE_PROMPT
                 )
             )
         ]

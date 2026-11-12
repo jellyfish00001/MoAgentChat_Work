@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     mail_allowed_domains: str = Field(default="", alias="MAIL_ALLOWED_DOMAINS")
     mail_logic_app_url: str = Field(default="", alias="MAIL_LOGIC_APP_URL")
 
+    scheduler_api_url: str = Field(default="http://127.0.0.1:5055", alias="SCHEDULER_API_URL")
+    schedule_job_key: str = Field(default="", alias="SCHEDULE_JOB_KEY")
+    langgraph_api_url: str = Field(default="http://127.0.0.1:2024", alias="LANGGRAPH_API_URL")
+
     def _testdata_root(self) -> Path:
         if self.flows_testdata_root:
             return Path(self.flows_testdata_root)

@@ -33,6 +33,7 @@ function getDecisionStatus(
 }
 
 function getActionTitle(action?: ActionRequest) {
+  if (action?.name === "create_schedule") return "確認建立排程";
   return action?.name === "send_mail"
     ? "確認寄信"
     : (action?.name ?? "待確認操作");

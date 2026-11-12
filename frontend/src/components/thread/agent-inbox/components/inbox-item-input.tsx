@@ -455,6 +455,39 @@ export function InboxItemInput({
     );
   };
 
+  if (actionRequest?.name === "create_schedule") {
+    return (
+      <div className="flex w-full flex-col gap-4">
+        <ArgsRenderer args={actionArgs} />
+        <div className="flex justify-end gap-2">
+          {isRejectAllowed && (
+            <Button
+              variant="outline"
+              disabled={isLoading || humanResponse.length === 0}
+              onClick={(event) =>
+                handleSubmit(event, {
+                  type: "reject",
+                  message: "使用者取消建立排程",
+                })
+              }
+            >
+              取消建立
+            </Button>
+          )}
+          {approveAllowed && (
+            <Button
+              variant="brand"
+              disabled={isLoading || humanResponse.length === 0}
+              onClick={(event) => handleSubmit(event, { type: "approve" })}
+            >
+              確認建立排程
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   if (actionRequest?.name === "send_mail") {
     const editResponse = humanResponse.find(
       (response) => response.type === "edit",

@@ -41,6 +41,7 @@ import { ContentBlocksPreview } from "./ContentBlocksPreview";
 import { Textarea } from "../ui/textarea";
 import { useScheduleComposer } from "@/hooks/useScheduleComposer";
 import { ScheduleConfirmCard } from "@/components/schedule/ScheduleConfirmCard";
+import { useLocalUser } from "@/hooks/useLocalUser";
 import { ScheduleThreadHeader } from "@/components/schedule/ScheduleThreadHeader";
 import { ScheduleKind } from "@/lib/schedule-api";
 import type { ScheduleDraft } from "@/lib/scheduleDraftParser";
@@ -108,6 +109,7 @@ function ScrollToBottom(props: { className?: string }) {
 }
 
 export function Thread() {
+  const userId = useLocalUser();
   const [artifactContext, setArtifactContext] = useArtifactContext();
   const [artifactOpen, closeArtifact] = useArtifactOpen();
 
@@ -236,7 +238,13 @@ export function Thread() {
     if ((input.trim().length === 0 && contentBlocks.length === 0) || isLoading)
       return;
     // 辨識排程意圖時改走確認流程
-    if (scheduleComposer.tryIntercept(input, contentBlocks.length)) return;
+    const selectedGraph =
+      assistantId || process.env.NEXT_PUBLIC_ASSISTANT_ID || "agent";
+    if (
+      selectedGraph !== "agent" &&
+      scheduleComposer.tryIntercept(input, contentBlocks.length)
+    )
+      return;
     setFirstTokenReceived(false);
 
     const newHumanMessage: Message = {
@@ -263,7 +271,7 @@ export function Thread() {
         streamMode: ["values"],
         streamSubgraphs: true,
         streamResumable: true,
-        metadata: { graph_id: graphId },
+        metadata: { graph_id: graphId, user_id: userId },
         optimisticValues: (prev) => ({
           ...prev,
           context,

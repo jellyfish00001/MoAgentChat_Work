@@ -164,8 +164,8 @@ export function ScheduleSidebar({
   }, [userId]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!stream.isLoading) void refresh();
+  }, [refresh, stream.isLoading]);
 
   /** 持久化排程區塊展開狀態。 */
   useEffect(() => {

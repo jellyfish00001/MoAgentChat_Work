@@ -14,7 +14,7 @@ export function ToolCalls({
 }) {
   // 寄信參數已在確認卡呈現，不重複顯示工具 ID 與原始參數。
   const visibleToolCalls = toolCalls?.filter(
-    (call) => call.name !== "send_mail",
+    (call) => call.name !== "send_mail" && call.name !== "create_schedule",
   );
   if (!visibleToolCalls?.length) return null;
 
@@ -88,6 +88,42 @@ export function ToolResult({ message }: { message: ToolMessage }) {
   const contentStr = isJsonContent
     ? JSON.stringify(parsedContent, null, 2)
     : String(message.content);
+  if (message.name === "create_schedule") {
+    const created = parsedContent?.status === "created";
+    return (
+      <div className="border-border bg-panel w-full rounded-xl border p-4 text-sm">
+        <p className="font-semibold">
+          {created
+            ? "排程已建立"
+            : parsedContent?.status === "cancelled"
+              ? "已取消建立排程"
+              : "無法建立排程"}
+        </p>
+        {created ? (
+          <div className="mt-2 space-y-1">
+            <p>{parsedContent.schedule.title}</p>
+            <p className="text-muted-foreground">
+              下次執行：
+              {new Date(parsedContent.schedule.nextRunAt).toLocaleString(
+                "zh-TW",
+                { timeZone: "Asia/Taipei" },
+              )}
+              （台北）
+            </p>
+            <p>
+              信件自動發送：
+              {parsedContent.schedule.autoSendMail ? "開啟" : "關閉"}
+            </p>
+            <p className="text-muted-foreground">
+              可在側欄「排程」查看與編輯。
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2">{parsedContent?.error ?? contentStr}</p>
+        )}
+      </div>
+    );
+  }
   const contentLines = contentStr.split("\n");
   const shouldTruncate = contentLines.length > 4 || contentStr.length > 500;
   const displayedContent =

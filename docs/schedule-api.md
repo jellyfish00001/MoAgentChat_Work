@@ -8,6 +8,17 @@
 
 ---
 
+## Demo 對話建立排程
+
+Demo Agent 提供 `create_schedule` 工具，不再用前端固定句型攔截 Demo 的排程需求，可依前文整理完整執行內容。Agent 顯示確認卡，按「確認建立排程」後才呼叫 `POST /api/internal/schedules/personal`；成功後回傳排程 ID、下次時間，側欄自動刷新。不會建立公司排程，也不在建立時立刻執行。
+
+- 內部路由需要 `X-Job-Key`，沿用 `ScheduleService.CreateAsync`，歸屬為個人 `Scope=User`。
+- Agent 的 `SCHEDULER_API_URL` 指向 Scheduler 內網；`SCHEDULE_JOB_KEY` 與 Scheduler 的 Job Key 相同；`LANGGRAPH_API_URL` 是未來執行的 Agent 內網網址。金鑰不可放前端或工具參數，未設定時回報錯誤。
+- 使用者 ID 來自當次對話 metadata `user_id`，由前端目前 local user 提供，不讓 LLM 指定。現有 local user 是 Demo 識別，不是正式登入授權；正式多使用者環境應改用已驗證的登入身分。
+- 支援每日、每週、每月、每 N 小時；缺少每週日期／每月日期／間隔時應先詢問。自動寄信預設 false，開啟時確認卡會明確顯示授權。
+- 排程執行中不能再次用此工具建立排程，避免遞迴建立。
+- 財務等其他 Graph 保留原本前端排程辨識流程。
+
 ## 流程圖（建立與列表）
 
 使用者在 UI 操作時，API 只負責把「排程定義」寫進／讀出資料庫；此時**還不會**跑 AI、也**不會**寄信。  

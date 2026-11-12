@@ -82,6 +82,15 @@ app.MapPost("/api/schedules/{id:guid}/run-now", async (Guid id, IScheduleRunExec
         run.StartedAt, run.FinishedAt));
 });
 
+/// <summary>內部：Agent 建立個人排程（需 X-Job-Key，沿用個人 CRUD 管線）。</summary>
+app.MapPost("/api/internal/schedules/personal", async (HttpRequest req, CreateScheduleRequest body, ScheduleService svc, CancellationToken ct) =>
+{
+    if (!CheckJobKey(req, jobKey)) return Results.Unauthorized();
+    if (string.IsNullOrWhiteSpace(body.UserId)) return Results.BadRequest(new { error = "userId 必填。" });
+    var dto = await svc.CreateAsync(body, ct);
+    return Results.Created($"/api/schedules/{dto.Id}", dto);
+});
+
 /// <summary>內部：列出公司排程（需 X-Job-Key）。</summary>
 app.MapPost("/api/internal/schedules/company/list", async (HttpRequest req, ScheduleService svc, CancellationToken ct) =>
 {
