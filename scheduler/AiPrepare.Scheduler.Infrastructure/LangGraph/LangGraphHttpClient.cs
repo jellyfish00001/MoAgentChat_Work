@@ -31,7 +31,8 @@ public sealed class LangGraphHttpClient : ILangGraphClient
         var client = _httpFactory.CreateClient("langgraph");
         // 前端存的 ApiUrl 是瀏覽器看得到的網址（k8s 上是 https://<前端>/api），
         // 叢集內改用 LANGGRAPH_API_URL 直連 server Service
-        var apiUrl = Environment.GetEnvironmentVariable("LANGGRAPH_API_URL") ?? request.ApiUrl;
+        // 執行目的地只由管理者設定，不能交給使用者指定主機。
+        var apiUrl = Environment.GetEnvironmentVariable("LANGGRAPH_API_URL") ?? "http://127.0.0.1:2024";
         client.BaseAddress = new Uri(apiUrl.TrimEnd('/') + "/");
         client.Timeout = TimeSpan.FromMinutes(5);
 
@@ -71,7 +72,7 @@ public sealed class LangGraphHttpClient : ILangGraphClient
                         new { type = "human", content = request.Prompt },
                     },
                 },
-                // 僅由排程已保存的開關注入；LLM 的 tool 參數不能開啟自動寄送。
+                // 開關僅供 Agent 的受限內網測試模式使用，不代表正式身分授權。
                 metadata = new Dictionary<string, object>
                 {
                     ["source"] = "schedule",
@@ -89,7 +90,12 @@ public sealed class LangGraphHttpClient : ILangGraphClient
                 },
                 stream_mode = "values",
             };
-            using var runRes = await client.PostAsJsonAsync($"threads/{threadId}/runs/wait", runBody, ct);
+            if (request.AutoSendMail)
+            {
+                _log.LogWarning("Schedule {ScheduleId}: auto-mail requested; Agent test-mode policy determines whether review is required",
+                    request.ScheduleId);
+            }
+            using var runRes = await client.PostAsJsonAsync($"threads/{threadId}/runs/wait", runBody, JsonOpts, ct);
             var runText = await runRes.Content.ReadAsStringAsync(ct);
             if (!runRes.IsSuccessStatusCode)
             {
@@ -110,7 +116,7 @@ public sealed class LangGraphHttpClient : ILangGraphClient
         public async Task<LangGraphRunResult> GetThreadResultAsync(string apiUrl, string threadId, CancellationToken ct = default)
         {
             var client = _httpFactory.CreateClient("langgraph");
-            var root = Environment.GetEnvironmentVariable("LANGGRAPH_API_URL") ?? apiUrl;
+            var root = Environment.GetEnvironmentVariable("LANGGRAPH_API_URL") ?? "http://127.0.0.1:2024";
             client.BaseAddress = new Uri(root.TrimEnd('/') + "/");
             using var response = await client.GetAsync($"threads/{threadId}", ct);
             response.EnsureSuccessStatusCode();

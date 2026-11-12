@@ -1,4 +1,4 @@
-"""寄信工具 send_mail：對話或未開自動寄信的排程須確認，收件人只能是允許的網域。
+"""寄信工具：一般寄信須確認，受限內網測試排程可自動寄送至核准信箱。
 
 規則在 flows.domain.mail，寄信方式在 flows.tools.mail_senders；這裡只負責串接。
 """
@@ -15,7 +15,7 @@ from langgraph.types import interrupt
 from flows.config import Settings, get_settings
 from flows.domain.mail import (
     check_recipients,
-    is_auto_send_authorized,
+    check_test_recipients,
     merge_edited_fields,
     normalize_addresses,
     parse_domains,
@@ -25,7 +25,8 @@ from flows.tools.mail_senders import REQUIRED_SETTINGS, SENDERS, MailError
 MAIL_PROMPT = (
     "使用者要求寄信時用 send_mail，系統會先讓使用者確認內容，不需要另外在對話中詢問。"
     "不知道收件人 email 時要先問使用者，不要自己猜。"
-    "排程也使用 send_mail：程式依排程的信件自動發送開關決定直接寄出或等待確認。"
+    "排程也使用 send_mail：只有管理者啟用內網測試模式且排程開啟自動寄信時免確認，"
+    "其他情況仍等待人工確認；由程式判斷，不要宣稱已有正式登入授權。"
     "不要在對話中先問要不要寄，直接呼叫工具，由程式處理確認。"
     "status 是 dry_run 時，要告訴使用者目前是測試模式，信沒有真的寄出。"
     "status 是 sent 時，只代表 Logic App 已受理請求，不能保證信件已送達，請提醒使用者查收。"
@@ -55,13 +56,20 @@ def request_approval(fields: dict[str, Any]) -> dict[str, Any] | None:
     )
 
     decisions = response.get("decisions") if isinstance(response, dict) else None
-    decision = decisions[0] if isinstance(decisions, list) and decisions else {}
+    if not isinstance(decisions, list) or len(decisions) != 1 or not isinstance(decisions[0], dict):
+        raise ValueError("寄信確認回覆格式無效，未寄出。")
+    decision = decisions[0]
     if decision.get("type") == "approve":
         return dict(fields)
     if decision.get("type") == "edit":
-        edited = (decision.get("edited_action") or {}).get("args") or {}
+        action = decision.get("edited_action")
+        if not isinstance(action, dict) or not isinstance(action.get("args"), dict):
+            raise ValueError("修改後的寄信欄位格式無效，未寄出。")
+        edited = action["args"]
         return merge_edited_fields(fields, edited)
-    return None
+    if decision.get("type") == "reject":
+        return None
+    raise ValueError("未知的寄信確認選項，未寄出。")
 
 
 def run_send_mail(
@@ -70,26 +78,50 @@ def run_send_mail(
     subject: str,
     body: str,
     cc: list[str] | None,
-    metadata: dict[str, Any] | None = None,
+    test_auto_send: bool = False,
 ) -> str:
-    """寄信流程：檢查 → 授權排程直接寄／其他等待確認 → 再檢查 → 寄出。"""
+    """寄信流程：檢查 → 人工確認或受限測試 → 再檢查 → 寄出。"""
     allowed = parse_domains(settings.mail_allowed_domains)
 
     # 1. 先檢查 LLM 給的收件人，不合規就不必打擾使用者
-    to, cc = normalize_addresses(to), normalize_addresses(cc)
+    try:
+        to, cc = normalize_addresses(to), normalize_addresses(cc)
+    except ValueError as exc:
+        return _result("rejected", error=str(exc))
     if error := check_recipients(to, cc, allowed):
+        return _result("rejected", error=error)
+    if settings.mail_test_mode and (
+        error := check_test_recipients(to, cc, settings.mail_test_recipients)
+    ):
         return _result("rejected", error=error)
 
     # 2. 中斷等使用者 Approve／Edit／Reject
     fields = {"to": to, "cc": cc, "subject": subject, "body": body}
-    approved = fields if is_auto_send_authorized(metadata) else request_approval(fields)
+    try:
+        # 這是內網測試便捷模式，不是身分驗證；正式環境不能使用。
+        approved = (
+            fields
+            if settings.test_schedule_auto_mail and test_auto_send
+            else request_approval(fields)
+        )
+    except ValueError as exc:
+        return _result("rejected", error=str(exc))
     if approved is None:
         return _result("cancelled", error="使用者取消寄信")
 
     # 3. 使用者可能在確認畫面改了收件人，要再檢查一次
-    to, cc = normalize_addresses(approved["to"]), normalize_addresses(approved["cc"])
+    try:
+        to, cc = normalize_addresses(approved["to"]), normalize_addresses(approved["cc"])
+    except ValueError as exc:
+        return _result("rejected", error=str(exc))
     if error := check_recipients(to, cc, allowed):
         return _result("rejected", error=error)
+    if settings.mail_test_mode and (
+        error := check_test_recipients(to, cc, settings.mail_test_recipients)
+    ):
+        return _result("rejected", error=error)
+    if not isinstance(approved["subject"], str) or not isinstance(approved["body"], str):
+        return _result("rejected", error="主旨與內容必須是文字。")
 
     # 4. 依 MAIL_BACKEND 寄出
     backend = settings.mail_backend.strip()
@@ -102,7 +134,7 @@ def run_send_mail(
 
 @tool
 def send_mail(to: list[str], subject: str, body: str, cc: list[str] | None = None) -> str:
-    """Send an email. Requires user review unless the scheduled run has auto-send enabled.
+    """Send an email with user review, except explicitly enabled test schedule auto-send.
 
     Args:
         to: Recipient email addresses.
@@ -112,12 +144,10 @@ def send_mail(to: list[str], subject: str, body: str, cc: list[str] | None = Non
     """
     # LangChain 以 docstring 當 tool 描述給 LLM，故維持英文；流程見 run_send_mail
     config = get_config()
-    metadata = dict(config.get("metadata") or {})
-    # thread metadata 會留在後續對話；自動授權僅取本次排程 run 的 configurable。
-    metadata["schedule_auto_send_mail"] = (
-        config.get("configurable", {}).get("schedule_auto_send_mail") is True
-    )
-    return run_send_mail(get_settings(), to, subject, body, cc, metadata)
+    test_auto_send = (config.get("metadata") or {}).get("source") == "schedule" and config.get(
+        "configurable", {}
+    ).get("schedule_auto_send_mail") is True
+    return run_send_mail(get_settings(), to, subject, body, cc, test_auto_send)
 
 
 def load_mail_tools(settings: Settings | None = None) -> list[BaseTool]:

@@ -34,10 +34,11 @@ def test_weekly_and_interval_map_existing_kinds() -> None:
     assert interval.api_payload("u", "url")["timeOfDay"] is None
 
 
-def test_auto_mail_confirmation_explicitly_discloses_authorization() -> None:
-    """開關開啟時確認畫面明確說明自動寄信授權。"""
+def test_auto_mail_confirmation_discloses_pending_authorization() -> None:
+    """確認內容須說明自動寄信僅限內網測試。"""
     draft = ScheduleDraft(title="x", prompt="y", kind="daily", auto_send_mail=True)
-    assert "授權" in draft.confirmation()["信件自動發送"]
+    assert "僅內網測試模式" in draft.confirmation()["信件自動發送"]
+    assert draft.api_payload("user", "http://agent:2024")["autoSendMail"] is True
 
 
 @pytest.mark.parametrize("time", ["24:00", "09:99", "9am"])

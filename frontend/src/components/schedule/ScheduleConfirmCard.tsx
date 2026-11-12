@@ -37,7 +37,7 @@ export function ScheduleConfirmCard({
           信件自動發送
           <span className="text-muted-foreground block text-xs">
             {autoSendMail
-              ? "確認建立即授權自動寄信，不再逐封詢問。"
+              ? "內網測試模式啟用時自動寄送；僅限核准測試信箱。"
               : "關閉時，寄信會等待你在對話中確認。"}
           </span>
         </span>

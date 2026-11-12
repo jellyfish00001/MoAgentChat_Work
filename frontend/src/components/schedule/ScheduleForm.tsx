@@ -263,7 +263,7 @@ export function ScheduleForm({
             <p className="text-sm font-medium">信件自動發送</p>
             <p className="text-muted-foreground text-xs break-words">
               {autoSendMail
-                ? "儲存即授權此排程寄信；後續執行不再逐封詢問，仍檢查收件人限制。"
+                ? "內網測試模式啟用時自動寄送至核准測試信箱；否則仍須確認。"
                 : "預設關閉；排程需要寄信時，停在對話確認卡，等待你確認。"}
             </p>
           </div>

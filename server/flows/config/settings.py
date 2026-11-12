@@ -5,7 +5,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # settings.py -> config -> flows -> server
@@ -55,6 +55,31 @@ class Settings(BaseSettings):
     mail_backend: str = Field(default="", alias="MAIL_BACKEND")
     mail_allowed_domains: str = Field(default="", alias="MAIL_ALLOWED_DOMAINS")
     mail_logic_app_url: str = Field(default="", alias="MAIL_LOGIC_APP_URL")
+    mail_test_mode: bool = Field(default=True, alias="MAIL_TEST_MODE")
+    mail_test_recipients: str = Field(default="", alias="MAIL_TEST_RECIPIENTS")
+    app_env: str = Field(default="", alias="APP_ENV")
+    test_schedule_auto_mail: bool = Field(default=False, alias="TEST_SCHEDULE_AUTO_MAIL")
+
+    @model_validator(mode="after")
+    def validate_test_auto_mail(self) -> Settings:
+        """免登入自動寄信僅供明確啟用的內網測試，且不可擴大實發信箱。"""
+        if self.test_schedule_auto_mail:
+            recipients = {
+                item.strip().casefold()
+                for item in self.mail_test_recipients.replace(";", ",").split(",")
+                if item.strip()
+            }
+            if (
+                self.app_env not in {"local", "test", "qas"}
+                or not self.mail_test_mode
+                or not recipients
+                or not recipients <= {"wits.johnnyho@wistron.com", "johnnyho@wits.com"}
+            ):
+                raise ValueError(
+                    "TEST_SCHEDULE_AUTO_MAIL 僅限 local/test/qas、MAIL_TEST_MODE=true，"
+                    "且測試收件人只能包含已核准的兩個信箱。"
+                )
+        return self
 
     scheduler_api_url: str = Field(default="http://127.0.0.1:5055", alias="SCHEDULER_API_URL")
     schedule_job_key: str = Field(default="", alias="SCHEDULE_JOB_KEY")

@@ -54,7 +54,8 @@ public static class DependencyInjection
         services.AddScoped<IScheduleRepository, EfScheduleRepository>();
         services.AddScoped<ScheduleService>();
         services.AddScoped<IScheduleRunExecutor, ScheduleRunExecutor>();
-        services.AddHttpClient("langgraph");
+        services.AddHttpClient("langgraph")
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddScoped<ILangGraphClient, LangGraphHttpClient>();
         // 本階段一律 Draft，不註冊實發 Http client，避免誤寄
         services.AddScoped<INotificationSender, DraftNotificationSender>();

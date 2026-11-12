@@ -50,7 +50,7 @@ class ScheduleDraft(BaseModel):
         }
 
     def confirmation(self) -> dict[str, str]:
-        """產生可讀的確認內容，開啟自動寄信時明確標示授權。"""
+        """產生可讀的確認內容，明確標示自動寄信僅限受控測試。"""
         period = {
             "daily": "每日",
             "weekly": f"每週（星期日為 0）：{self.weekday}",
@@ -62,7 +62,7 @@ class ScheduleDraft(BaseModel):
             "執行內容": self.prompt,
             "週期": period,
             "時間": "固定間隔" if self.kind == "every_n_hours" else f"{self.time_of_day}（台北）",
-            "信件自動發送": "開啟：確認即授權後續自動寄送"
+            "信件自動發送": "開啟：僅內網測試模式自動寄送至核准信箱，否則需確認"
             if self.auto_send_mail
             else "關閉：寄信需確認",
         }

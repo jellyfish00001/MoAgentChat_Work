@@ -20,7 +20,8 @@ SCHEDULE_PROMPT = (
     "你可以使用 create_schedule 幫使用者建立個人排程，包括每日、每週、每月、每 N 小時。"
     "理解完整對話（如『照剛才內容每個月跑一次』），將未來要執行的內容寫成獨立完整 prompt，"
     "不要在 prompt 包含再次建立排程的指令。時間預設台北 09:00；每週或每月日期不明時先詢問。"
-    "自動寄信預設關閉，只有使用者明確要求才設 true，工具會顯示確認卡，"
+    "自動寄信預設關閉，只有使用者明確要求才保存 true；僅內網測試模式可自動寄至核准信箱。"
+    "工具會顯示確認卡，"
     "不要先另外問是否建立，直接呼叫工具。只有工具回傳 created 才能說已建立，"
     "並說明側欄排程可查看；failed 或 rejected 必須回報原因，不要假裝成功。"
 )
@@ -47,7 +48,7 @@ def create_schedule(
         weekday: Required for weekly; Sunday=0 through Saturday=6.
         day_of_month: Required for monthly; 1-31, clamped to month end.
         interval_hours: Required for every_n_hours; 1-168.
-        auto_send_mail: False unless the user explicitly requested automatic mail.
+        auto_send_mail: Auto-send only in administrator-enabled restricted test mode.
     """
     config = get_config()
     metadata = config.get("metadata") or {}
@@ -87,7 +88,9 @@ def create_schedule(
                 {
                     "name": "create_schedule",
                     "args": draft.confirmation(),
-                    "description": "確認建立此排程？開啟自動寄信即授權後續執行寄送。",
+                    "description": (
+                        "確認建立此排程？自動寄信僅在內網測試模式啟用，且只寄至核准信箱。"
+                    ),
                 }
             ],
             "review_configs": [

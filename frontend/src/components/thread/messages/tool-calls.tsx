@@ -112,7 +112,9 @@ export function ToolResult({ message }: { message: ToolMessage }) {
             </p>
             <p>
               信件自動發送：
-              {parsedContent.schedule.autoSendMail ? "開啟" : "關閉"}
+              {parsedContent.schedule.autoSendMail
+                ? "開啟（僅受限內網測試模式生效）"
+                : "關閉"}
             </p>
             <p className="text-muted-foreground">
               可在側欄「排程」查看與編輯。

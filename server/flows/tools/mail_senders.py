@@ -9,6 +9,12 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from flows.config import Settings
+from flows.domain.mail import (
+    check_recipients,
+    check_test_recipients,
+    normalize_addresses,
+    parse_domains,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +26,11 @@ class MailError(RuntimeError):
 
 
 def send_dry_run(settings: Settings, to: list[str], cc: list[str], subject: str, body: str) -> None:
-    """不寄出，只把信件內容印在 log（本機測試用）。"""
+    """不寄出；只記錄人數，避免薪資與個資流入一般日誌。"""
     logger.warning(
-        "[mail dry_run] 沒有真的寄出\nTo: %s\nCc: %s\nSubject: %s\n\n%s",
-        ", ".join(to),
-        ", ".join(cc),
-        subject,
-        body,
+        "[mail dry_run] 沒有真的寄出；To=%d, Cc=%d",
+        len(to),
+        len(cc),
     )
 
 
@@ -34,7 +38,16 @@ def send_logic_app(
     settings: Settings, to: list[str], cc: list[str], subject: str, body: str
 ) -> None:
     """POST 到 Logic App 寄信；2xx 只代表收到，實際寄出要看 Logic App run history。"""
-    # 1. 欄位對應目前 Logic App 的 schema；沒有副本欄位，cc 併進收件人
+    # 最終出口再檢查，避免其他程式直接呼叫 sender 繞過測試限制。
+    try:
+        to, cc = normalize_addresses(to), normalize_addresses(cc)
+    except ValueError as exc:
+        raise MailError(str(exc)) from exc
+    error = check_recipients(to, cc, parse_domains(settings.mail_allowed_domains))
+    if not error and settings.mail_test_mode:
+        error = check_test_recipients(to, cc, settings.mail_test_recipients)
+    if error:
+        raise MailError(error)
     payload = {
         "DataFactoryName": subject,
         "EmailTo": ";".join(to + cc),
@@ -52,10 +65,11 @@ def send_logic_app(
         with urlopen(request, timeout=30):
             pass
     except HTTPError as exc:
-        detail = exc.read().decode("utf-8", errors="replace")
-        raise MailError(f"Logic App 寄信失敗（HTTP {exc.code}）：{detail}") from exc
-    except URLError as exc:
-        raise MailError(f"連不到 Logic App：{exc.reason}") from exc
+        raise MailError(
+            f"Logic App 寄信失敗（HTTP {exc.code}），請由管理者查閱服務紀錄。"
+        ) from None
+    except URLError:
+        raise MailError("無法連線 Logic App，請由管理者檢查服務連線。") from None
 
 
 SENDERS: dict[str, Sender] = {"dry_run": send_dry_run, "logic_app": send_logic_app}

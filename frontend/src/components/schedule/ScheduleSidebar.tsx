@@ -68,7 +68,7 @@ function ScheduleRow({
         type="button"
         className="text-foreground hover:bg-muted min-w-0 flex-1 truncate rounded-md px-1.5 py-1 text-left text-sm"
         onClick={onOpenLast}
-        title={`${item.title}｜信件自動發送：${item.autoSendMail ? "開啟" : "關閉"}`}
+        title={`${item.title}｜自動寄信：${item.autoSendMail ? "開啟（僅受限測試模式生效）" : "關閉"}`}
       >
         {item.title}
       </button>

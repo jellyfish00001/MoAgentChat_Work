@@ -7,7 +7,7 @@ import re
 from typing import Any
 
 MAX_RECIPIENTS = 20
-EMAIL_PATTERN = re.compile(r"^[^@\s]+@([^@\s]+\.[^@\s]+)$")
+EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})$")
 
 
 def parse_domains(raw: str) -> set[str]:
@@ -19,6 +19,10 @@ def normalize_addresses(addresses: list[str] | str | None) -> list[str]:
     """收件人統一成 list；使用者在確認畫面可能改成逗號或分號隔開的字串。"""
     if isinstance(addresses, str):
         addresses = re.split(r"[,;]", addresses)
+    if addresses is not None and (
+        not isinstance(addresses, list) or not all(isinstance(item, str) for item in addresses)
+    ):
+        raise ValueError("收件人必須是 email 字串或字串清單。")
     return [address.strip() for address in addresses or [] if address.strip()]
 
 
@@ -34,11 +38,19 @@ def check_recipients(
     if len(to) + len(cc) > max_recipients:
         return f"收件人加副本超過 {max_recipients} 人。"
     for address in to + cc:
-        match = EMAIL_PATTERN.match(address)
+        match = EMAIL_PATTERN.fullmatch(address)
         if not match:
             return f"「{address}」不是有效的 email。"
         if match.group(1).lower() not in allowed_domains:
             return f"「{address}」不在允許的網域（{', '.join(sorted(allowed_domains))}）。"
+    return None
+
+
+def check_test_recipients(to: list[str], cc: list[str], allowed: str) -> str | None:
+    """測試環境只允許完整信箱，不接受同公司網域或副本繞過。"""
+    permitted = {address.casefold() for address in normalize_addresses(allowed)}
+    if not permitted or any(address.casefold() not in permitted for address in to + cc):
+        return "測試模式只能寄送至 MAIL_TEST_RECIPIENTS 明確允許的信箱。"
     return None
 
 
@@ -63,8 +75,3 @@ def merge_edited_fields(fields: dict[str, Any], edited: dict[str, Any]) -> dict[
 def is_unattended_run(metadata: dict[str, Any] | None) -> bool:
     """排程觸發的執行沒有人能按確認；由 run metadata 的 source 判斷。"""
     return (metadata or {}).get("source") == "schedule"
-
-
-def is_auto_send_authorized(metadata: dict[str, Any] | None) -> bool:
-    """只有排程來源且開關明確為布林 True，才可免逐封確認。"""
-    return is_unattended_run(metadata) and (metadata or {}).get("schedule_auto_send_mail") is True

@@ -5,7 +5,7 @@ from __future__ import annotations
 from flows.domain.mail import (
     MAX_RECIPIENTS,
     check_recipients,
-    is_auto_send_authorized,
+    check_test_recipients,
     is_unattended_run,
     merge_edited_fields,
     normalize_addresses,
@@ -23,13 +23,13 @@ def test_is_unattended_run_only_matches_schedule_source() -> None:
     assert not is_unattended_run(None)
 
 
-def test_auto_send_requires_schedule_and_explicit_boolean() -> None:
-    """自動寄送預設關閉；字串或一般對話不能偽裝授權。"""
-    assert is_auto_send_authorized({"source": "schedule", "schedule_auto_send_mail": True})
-    for value in (False, None, "true", 1):
-        assert not is_auto_send_authorized({"source": "schedule", "schedule_auto_send_mail": value})
-    assert not is_auto_send_authorized({"source": "chat", "schedule_auto_send_mail": True})
-    assert not is_auto_send_authorized(None)
+def test_test_restriction_checks_exact_addresses_and_cc() -> None:
+    """同網域其他人也不可寄；大小寫可不同，副本不得繞過。"""
+    permitted = "wits.johnnyho@wistron.com,JohnnyHo@wits.com"
+    assert check_test_recipients(["Wits.JohnnyHo@wistron.com"], [], permitted) is None
+    assert check_test_recipients(["JohnnyHo@wits.com"], ["other@wits.com"], permitted)
+    assert check_test_recipients(["other@wistron.com"], [], permitted)
+    assert check_test_recipients(["JohnnyHo@wits.com"], [], "")
 
 
 def test_parse_domains_trims_and_lowercases() -> None:
@@ -62,6 +62,13 @@ def test_check_recipients_rejects_invalid_and_foreign_domain() -> None:
     """格式錯誤與不在白名單的網域（含副本）都要擋。"""
     assert "不是有效的 email" in check_recipients(["not-an-email"], [], ALLOWED)
     assert "不在允許的網域" in check_recipients(["a@wistron.com"], ["x@gmail.com"], ALLOWED)
+    for address in (
+        "a\n@wistron.com",
+        "a@wistron.com\n",
+        "a<b>@wistron.com",
+        "a@wistron.com;b@wistron.com",
+    ):
+        assert check_recipients([address], [], ALLOWED)
 
 
 def test_check_recipients_rejects_when_no_domain_allowed() -> None:
