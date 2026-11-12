@@ -21,6 +21,7 @@ interface UseInterruptedActionsInput {
 interface UseInterruptedActionsValue {
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent> | KeyboardEvent,
+    explicitDecision?: Decision,
   ) => Promise<void>;
   handleResolve: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -105,12 +106,12 @@ export default function useInterruptedActions({
 
   const handleSubmit = async (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent> | KeyboardEvent,
+    explicitDecision?: Decision,
   ) => {
     e.preventDefault();
-    const { decision, error } = buildDecisionFromState(
-      humanResponse,
-      selectedSubmitType,
-    );
+    const { decision, error } = explicitDecision
+      ? { decision: explicitDecision }
+      : buildDecisionFromState(humanResponse, selectedSubmitType);
 
     if (!decision) {
       toast.error("Error", {

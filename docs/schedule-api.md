@@ -46,6 +46,10 @@ flowchart LR
 真正跑 AI 時，Job 的 due-scanner 與 UI 的「立刻執行」走**同一條** `IScheduleRunExecutor`。  
 LangGraph 結束後，若 `NotifyEnabled` 且有 `EmailTo`，再走 **確定性** `INotificationSender`（本機 Draft）。
 
+排程的 thread 與 run metadata 都會標記 `source=schedule`。目前 Agent 的 `send_mail` 會拒絕此來源的呼叫並回報原因，不會停在無人確認的卡片，也不會寄出。這不代表整個排程執行失敗；寄信工具回傳 `rejected`，排程結果通知仍維持 Draft。
+
+排程前端維持不變。動態查詢人員後寄給多人，需要另外實作事先授權的查詢範圍與寄送規則，不以固定 To／Cc 欄位替代；詳見[寄信功能](./mail.md)。
+
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 40, "rankSpacing": 70, "padding": 16}}}%%
 flowchart TD

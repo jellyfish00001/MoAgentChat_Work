@@ -5,12 +5,21 @@ from __future__ import annotations
 from flows.domain.mail import (
     MAX_RECIPIENTS,
     check_recipients,
+    is_unattended_run,
     merge_edited_fields,
     normalize_addresses,
     parse_domains,
 )
 
 ALLOWED = {"wistron.com"}
+
+
+def test_is_unattended_run_only_matches_schedule_source() -> None:
+    """排程來源需要阻擋；一般對話與缺少來源仍使用確認流程。"""
+    assert is_unattended_run({"source": "schedule", "schedule_id": "123"})
+    assert not is_unattended_run({"source": "chat"})
+    assert not is_unattended_run({})
+    assert not is_unattended_run(None)
 
 
 def test_parse_domains_trims_and_lowercases() -> None:

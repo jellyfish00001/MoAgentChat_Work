@@ -12,23 +12,27 @@ export function ToolCalls({
 }: {
   toolCalls: AIMessage["tool_calls"];
 }) {
-  if (!toolCalls || toolCalls.length === 0) return null;
+  // 寄信參數已在確認卡呈現，不重複顯示工具 ID 與原始參數。
+  const visibleToolCalls = toolCalls?.filter(
+    (call) => call.name !== "send_mail",
+  );
+  if (!visibleToolCalls?.length) return null;
 
   return (
     <div className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2">
-      {toolCalls.map((tc, idx) => {
+      {visibleToolCalls.map((tc, idx) => {
         const args = tc.args as Record<string, any>;
         const hasArgs = Object.keys(args).length > 0;
         return (
           <div
             key={idx}
-            className="overflow-hidden rounded-sm border border-border"
+            className="border-border overflow-hidden rounded-sm border"
           >
-            <div className="border-b border-border bg-muted px-4 py-2">
-              <h3 className="font-medium text-foreground">
+            <div className="border-border bg-muted border-b px-4 py-2">
+              <h3 className="text-foreground font-medium">
                 {tc.name}
                 {tc.id && (
-                  <code className="ml-2 rounded bg-muted px-2 py-1 text-sm">
+                  <code className="bg-muted ml-2 rounded px-2 py-1 text-sm">
                     {tc.id}
                   </code>
                 )}
@@ -39,12 +43,12 @@ export function ToolCalls({
                 <tbody className="divide-y divide-gray-200">
                   {Object.entries(args).map(([key, value], argIdx) => (
                     <tr key={argIdx}>
-                      <td className="px-4 py-2 text-sm font-medium whitespace-nowrap text-foreground">
+                      <td className="text-foreground px-4 py-2 text-sm font-medium whitespace-nowrap">
                         {key}
                       </td>
-                      <td className="px-4 py-2 text-sm text-muted-foreground">
+                      <td className="text-muted-foreground px-4 py-2 text-sm">
                         {isComplexValue(value) ? (
-                          <code className="rounded bg-muted px-2 py-1 font-mono text-sm break-all">
+                          <code className="bg-muted rounded px-2 py-1 font-mono text-sm break-all">
                             {JSON.stringify(value, null, 2)}
                           </code>
                         ) : (
@@ -95,28 +99,28 @@ export function ToolResult({ message }: { message: ToolMessage }) {
 
   return (
     <div className="mx-auto grid max-w-3xl grid-rows-[1fr_auto] gap-2">
-      <div className="overflow-hidden rounded-sm border border-border">
-        <div className="border-b border-border bg-muted px-4 py-2">
+      <div className="border-border overflow-hidden rounded-sm border">
+        <div className="border-border bg-muted border-b px-4 py-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             {message.name ? (
-              <h3 className="font-medium text-foreground">
+              <h3 className="text-foreground font-medium">
                 Tool Result:{" "}
-                <code className="rounded bg-muted px-2 py-1">
+                <code className="bg-muted rounded px-2 py-1">
                   {message.name}
                 </code>
               </h3>
             ) : (
-              <h3 className="font-medium text-foreground">Tool Result</h3>
+              <h3 className="text-foreground font-medium">Tool Result</h3>
             )}
             {message.tool_call_id && (
-              <code className="ml-2 rounded bg-muted px-2 py-1 text-sm">
+              <code className="bg-muted ml-2 rounded px-2 py-1 text-sm">
                 {message.tool_call_id}
               </code>
             )}
           </div>
         </div>
         <motion.div
-          className="min-w-full bg-muted"
+          className="bg-muted min-w-full"
           initial={false}
           animate={{ height: "auto" }}
           transition={{ duration: 0.3 }}
@@ -147,12 +151,12 @@ export function ToolResult({ message }: { message: ToolMessage }) {
                           : [item[0], item[1]];
                         return (
                           <tr key={argIdx}>
-                            <td className="px-4 py-2 text-sm font-medium whitespace-nowrap text-foreground">
+                            <td className="text-foreground px-4 py-2 text-sm font-medium whitespace-nowrap">
                               {key}
                             </td>
-                            <td className="px-4 py-2 text-sm text-muted-foreground">
+                            <td className="text-muted-foreground px-4 py-2 text-sm">
                               {isComplexValue(value) ? (
-                                <code className="rounded bg-muted px-2 py-1 font-mono text-sm break-all">
+                                <code className="bg-muted rounded px-2 py-1 font-mono text-sm break-all">
                                   {JSON.stringify(value, null, 2)}
                                 </code>
                               ) : (
@@ -176,7 +180,7 @@ export function ToolResult({ message }: { message: ToolMessage }) {
               parsedContent.length > 5)) && (
             <motion.button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="flex w-full cursor-pointer items-center justify-center border-t-[1px] border-border py-2 text-muted-foreground transition-all duration-200 ease-in-out hover:bg-muted hover:text-muted-foreground"
+              className="border-border text-muted-foreground hover:bg-muted hover:text-muted-foreground flex w-full cursor-pointer items-center justify-center border-t-[1px] py-2 transition-all duration-200 ease-in-out"
               initial={{ scale: 1 }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

@@ -1,5 +1,5 @@
 import React from "react";
-import { DecisionWithEdits, SubmitType, HITLRequest } from "../types";
+import { Decision, DecisionWithEdits, SubmitType, HITLRequest } from "../types";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,7 +13,7 @@ function ResetButton({ handleReset }: { handleReset: () => void }) {
     <Button
       onClick={handleReset}
       variant="ghost"
-      className="flex items-center justify-center gap-2 text-muted-foreground hover:text-red-500"
+      className="text-muted-foreground flex items-center justify-center gap-2 hover:text-red-500"
     >
       <Undo2 className="h-4 w-4" />
       <span>Reset</span>
@@ -35,10 +35,10 @@ function ArgsRenderer({ args }: { args: Record<string, unknown> }) {
             key={`args-${key}`}
             className="flex flex-col items-start gap-1"
           >
-            <p className="text-sm leading-[18px] text-wrap text-muted-foreground">
+            <p className="text-muted-foreground text-sm leading-[18px] text-wrap">
               {prettifyText(key)}
             </p>
-            <span className="w-full max-w-full rounded-sm bg-muted p-3 text-[13px] leading-[18px] text-foreground">
+            <span className="bg-muted text-foreground w-full max-w-full rounded-sm p-3 text-[13px] leading-[18px]">
               <MarkdownText>{stringValue}</MarkdownText>
             </span>
           </div>
@@ -68,6 +68,7 @@ interface InboxItemInputProps {
 
   handleSubmit: (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent,
+    explicitDecision?: Decision,
   ) => Promise<void> | void;
 }
 
@@ -83,7 +84,7 @@ function ApproveOnly({
   ) => Promise<void> | void;
 }) {
   return (
-    <div className="flex w-full flex-col items-start gap-4 rounded-sm border border-border p-6">
+    <div className="border-border flex w-full flex-col items-start gap-4 rounded-sm border p-6">
       {Object.keys(actionRequestArgs).length > 0 && (
         <ArgsRenderer args={actionRequestArgs} />
       )}
@@ -183,9 +184,9 @@ function EditActionCard({
   };
 
   return (
-    <div className="flex w-full min-w-full flex-col items-start gap-4 rounded-sm border border-border p-6">
+    <div className="border-border flex w-full min-w-full flex-col items-start gap-4 rounded-sm border p-6">
       <div className="flex w-full items-center justify-between">
-        <p className="text-base font-semibold text-foreground">{header}</p>
+        <p className="text-foreground text-base font-semibold">{header}</p>
         <ResetButton handleReset={handleReset} />
       </div>
 
@@ -274,9 +275,9 @@ function RejectActionCard({
   };
 
   return (
-    <div className="flex w-full max-w-full flex-col items-start gap-4 rounded-sm border border-border p-6">
+    <div className="border-border flex w-full max-w-full flex-col items-start gap-4 rounded-sm border p-6">
       <div className="flex w-full items-center justify-between">
-        <p className="text-base font-semibold text-foreground">Reject</p>
+        <p className="text-foreground text-base font-semibold">Reject</p>
         <ResetButton handleReset={() => onChange("", rejectResponse)} />
       </div>
 
@@ -454,6 +455,97 @@ export function InboxItemInput({
     );
   };
 
+  if (actionRequest?.name === "send_mail") {
+    const editResponse = humanResponse.find(
+      (response) => response.type === "edit",
+    );
+    const fields = editResponse?.edited_action.args ?? actionArgs;
+    const labels = {
+      to: "收件人",
+      cc: "副本",
+      subject: "主旨",
+      body: "信件內容",
+    };
+    const ready = humanResponse.length > 0 && !isLoading;
+
+    return (
+      <div className="flex w-full flex-col gap-4">
+        <p className="text-muted-foreground text-sm">
+          信件尚未寄出。請確認以下內容，可先修改再寄送。
+        </p>
+        {Object.entries(labels).map(([key, label]) => {
+          const value = fields[key];
+          const text = Array.isArray(value)
+            ? value.join("; ")
+            : String(value ?? "");
+          return (
+            <label
+              key={key}
+              className="flex flex-col gap-1.5 text-sm font-medium"
+            >
+              {label}
+              <Textarea
+                aria-label={label}
+                value={text}
+                disabled={!ready || !isEditAllowed}
+                rows={key === "body" ? 5 : 1}
+                className={key === "body" ? "min-h-32" : "min-h-10"}
+                placeholder={key === "cc" ? "選填" : undefined}
+                onChange={(event) => {
+                  if (editResponse) {
+                    onEditChange(event.target.value, editResponse, key);
+                  }
+                }}
+              />
+            </label>
+          );
+        })}
+        <div className="flex flex-wrap justify-end gap-2">
+          {isRejectAllowed && (
+            <Button
+              variant="outline"
+              disabled={!ready}
+              onClick={(event) =>
+                handleSubmit(event, {
+                  type: "reject",
+                  message: "使用者取消寄信",
+                })
+              }
+            >
+              取消寄送
+            </Button>
+          )}
+          {(approveAllowed || isEditAllowed) && (
+            <Button
+              variant="brand"
+              disabled={!ready}
+              onClick={(event) =>
+                handleSubmit(
+                  event,
+                  editResponse?.editsMade
+                    ? {
+                        type: "edit",
+                        edited_action: editResponse.edited_action,
+                      }
+                    : approveAllowed
+                      ? { type: "approve" }
+                      : editResponse
+                        ? {
+                            type: "edit",
+                            edited_action: editResponse.edited_action,
+                          }
+                        : undefined,
+                )
+              }
+            >
+              {isLoading ? "處理中…" : "確認寄送"}
+            </Button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex w-full max-w-full flex-col items-start justify-start gap-2">
       {showArgsOutsideCards && <ArgsRenderer args={actionArgs} />}
@@ -471,7 +563,7 @@ export function InboxItemInput({
         {supportsMultipleMethods ? (
           <div className="mx-auto mt-3 flex items-center gap-3">
             <Separator className="w-full" />
-            <p className="text-sm text-muted-foreground">Or</p>
+            <p className="text-muted-foreground text-sm">Or</p>
             <Separator className="w-full" />
           </div>
         ) : null}
@@ -486,10 +578,12 @@ export function InboxItemInput({
         />
 
         {isLoading && (
-          <p className="text-sm text-muted-foreground">Submitting decision...</p>
+          <p className="text-muted-foreground text-sm">
+            Submitting decision...
+          </p>
         )}
         {selectedSubmitType && supportsMultipleMethods && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-muted-foreground text-xs">
             Currently selected: {prettifyText(selectedSubmitType)}
           </p>
         )}

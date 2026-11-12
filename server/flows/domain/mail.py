@@ -58,3 +58,8 @@ def merge_edited_fields(fields: dict[str, Any], edited: dict[str, Any]) -> dict[
     return {
         key: restore_edited_value(value, edited.get(key, value)) for key, value in fields.items()
     }
+
+
+def is_unattended_run(metadata: dict[str, Any] | None) -> bool:
+    """排程觸發的執行沒有人能按確認；由 run metadata 的 source 判斷。"""
+    return (metadata or {}).get("source") == "schedule"

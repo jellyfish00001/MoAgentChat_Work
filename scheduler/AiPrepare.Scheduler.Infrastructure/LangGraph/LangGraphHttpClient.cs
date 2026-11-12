@@ -69,6 +69,12 @@ public sealed class LangGraphHttpClient : ILangGraphClient
                         new { type = "human", content = request.Prompt },
                     },
                 },
+                // run 層也帶 source=schedule，Agent 的 send_mail 靠這個判斷「沒有人能確認」而拒絕寄信
+                metadata = new Dictionary<string, object>
+                {
+                    ["source"] = "schedule",
+                    ["schedule_id"] = request.ScheduleId.ToString(),
+                },
                 stream_mode = "values",
             };
             using var runRes = await client.PostAsJsonAsync($"threads/{threadId}/runs/wait", runBody, ct);
