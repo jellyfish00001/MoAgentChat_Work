@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     flows_analysis_limit: int = Field(default=5, alias="FLOWS_ANALYSIS_LIMIT")
     flows_rd_sample_limit: int = Field(default=50, alias="FLOWS_RD_SAMPLE_LIMIT")
 
+    # 寄信（選填）：MAIL_BACKEND 空白＝不開寄信；URL 含 sig 等於密碼，只放 .env／Vault
+    mail_backend: str = Field(default="", alias="MAIL_BACKEND")
+    mail_allowed_domains: str = Field(default="", alias="MAIL_ALLOWED_DOMAINS")
+    mail_logic_app_url: str = Field(default="", alias="MAIL_LOGIC_APP_URL")
+
     def _testdata_root(self) -> Path:
         if self.flows_testdata_root:
             return Path(self.flows_testdata_root)

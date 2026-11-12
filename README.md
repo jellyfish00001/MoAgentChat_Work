@@ -126,6 +126,8 @@ SOP 範例用 devpack 平台（`gitlab.devpack.cc`、`sonarqube.devpack.cc`）�
 
 排程流程：[docs/schedule-api.md](docs/schedule-api.md)（API／DB）、[docs/schedule-deploy.md](docs/schedule-deploy.md)（部署預估）、[docs/schedule-db.md](docs/schedule-db.md)（DB 更新與資料）。
 
+寄信：[docs/mail.md](docs/mail.md)（`send_mail` 工具、使用者確認、Logic App；沒設 `MAIL_BACKEND` 不開啟）。
+
 ## 5. 前端：Agent Chat UI
 
 前端採用 **Agent Chat UI**（LangChain 官方開源，Next.js／TypeScript），使用者從 [fin.wistron.com](https://fin.wistron.com/#/login) 的「AI 家園」連結進入。
