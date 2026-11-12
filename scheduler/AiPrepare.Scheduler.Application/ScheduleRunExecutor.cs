@@ -54,7 +54,8 @@ public sealed class ScheduleRunExecutor : IScheduleRunExecutor
 
         // 1. 認領：先推 NextRunAt，避免並發 due-scanner 重複撿同一列
         schedule.NextRunAt = NextRunCalculator.ComputeNext(
-            schedule.Kind, DateTimeOffset.UtcNow, schedule.TimeOfDay, schedule.Weekday, schedule.IntervalHours);
+            schedule.Kind, DateTimeOffset.UtcNow, schedule.TimeOfDay, schedule.Weekday, schedule.IntervalHours,
+            schedule.TimeZone, schedule.DayOfMonth);
         schedule.UpdatedAt = DateTimeOffset.UtcNow;
         await _repo.UpdateAsync(schedule, ct);
 
@@ -78,15 +79,19 @@ public sealed class ScheduleRunExecutor : IScheduleRunExecutor
                     schedule.Prompt,
                     schedule.Id,
                     schedule.Title,
-                    schedule.UserId),
+                    schedule.UserId,
+                    schedule.AutoSendMail,
+                    run.Id),
                 ct);
 
             // 4. 寫回 LangGraph 成功／失敗狀態
-            run.FinishedAt = DateTimeOffset.UtcNow;
+            run.ThreadId = string.IsNullOrEmpty(result.ThreadId) ? null : result.ThreadId;
+            run.FinishedAt = result.WaitingForConfirmation ? null : DateTimeOffset.UtcNow;
             if (result.Ok)
             {
-                run.Status = ScheduleRunStatus.Succeeded;
-                run.ThreadId = result.ThreadId;
+                run.Status = result.WaitingForConfirmation
+                    ? ScheduleRunStatus.WaitingForConfirmation
+                    : ScheduleRunStatus.Succeeded;
             }
             else
             {
@@ -95,9 +100,11 @@ public sealed class ScheduleRunExecutor : IScheduleRunExecutor
             }
 
             // 5. 確定性通知（非 LLM 判斷）；Draft 模式不實發
-            run.NotifyOutcome = await TryNotifyAsync(schedule, run, ct);
+            run.NotifyOutcome = result.WaitingForConfirmation
+                ? "Skipped:WaitingForConfirmation"
+                : await TryNotifyAsync(schedule, run, ct);
 
-            schedule.LastRunAt = run.FinishedAt;
+            schedule.LastRunAt = run.StartedAt;
             schedule.UpdatedAt = DateTimeOffset.UtcNow;
             await _repo.UpdateRunAsync(run, ct);
             await _repo.UpdateAsync(schedule, ct);

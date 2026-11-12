@@ -11,9 +11,14 @@ public sealed class ScheduleService
     public const string CompanyUserId = "company";
 
     private readonly IScheduleRepository _repo;
+    private readonly ILangGraphClient _lg;
 
     /// <summary>注入排程仓储。</summary>
-    public ScheduleService(IScheduleRepository repo) => _repo = repo;
+    public ScheduleService(IScheduleRepository repo, ILangGraphClient lg)
+    {
+        _repo = repo;
+        _lg = lg;
+    }
 
     /// <summary>建立個人排程（強制 Scope=User）並計算首次 NextRunAt。</summary>
     public async Task<ScheduleDto> CreateAsync(CreateScheduleRequest req, CancellationToken ct = default)
@@ -64,6 +69,7 @@ public sealed class ScheduleService
     {
         var s = await _repo.GetAsync(id, ct);
         if (s is null) return null;
+        ValidateMonthly(req.Kind ?? s.Kind, req.DayOfMonth ?? s.DayOfMonth);
         if (req.Title is not null) s.Title = req.Title.Trim();
         if (req.Prompt is not null) s.Prompt = req.Prompt;
         if (req.Enabled is not null) s.Enabled = req.Enabled.Value;
@@ -71,12 +77,15 @@ public sealed class ScheduleService
         if (req.TimeOfDay is not null) s.TimeOfDay = req.TimeOfDay;
         if (req.Weekday is not null) s.Weekday = req.Weekday;
         if (req.IntervalHours is not null) s.IntervalHours = req.IntervalHours;
+        if (req.DayOfMonth is not null) s.DayOfMonth = req.DayOfMonth;
+        if (req.AutoSendMail is not null) s.AutoSendMail = req.AutoSendMail.Value;
         if (req.NotifyEnabled is not null) s.NotifyEnabled = req.NotifyEnabled.Value;
         if (req.EmailTo is not null) s.EmailTo = NormalizeAddresses(req.EmailTo);
         if (req.EmailCc is not null) s.EmailCc = NormalizeAddresses(req.EmailCc);
         s.UpdatedAt = DateTimeOffset.UtcNow;
         s.NextRunAt = NextRunCalculator.ComputeNext(
-            s.Kind, DateTimeOffset.UtcNow, s.TimeOfDay, s.Weekday, s.IntervalHours);
+            s.Kind, DateTimeOffset.UtcNow, s.TimeOfDay, s.Weekday, s.IntervalHours,
+            s.TimeZone, s.DayOfMonth);
         await _repo.UpdateAsync(s, ct);
         return await ToDtoAsync(s, ct);
     }
@@ -95,6 +104,10 @@ public sealed class ScheduleService
     public async Task<IReadOnlyList<ScheduleRunDto>> ListRunsAsync(Guid scheduleId, CancellationToken ct = default)
     {
         var runs = await _repo.ListRunsAsync(scheduleId, ct);
+        var schedule = await _repo.GetAsync(scheduleId, ct);
+        if (schedule is not null)
+            foreach (var run in runs)
+                await RefreshWaitingRunAsync(schedule, run, ct);
         return runs.Select(r => new ScheduleRunDto(
             r.Id, r.ScheduleId, r.Status, r.ThreadId, r.Error, r.NotifyOutcome, r.StartedAt, r.FinishedAt)).ToList();
     }
@@ -103,6 +116,7 @@ public sealed class ScheduleService
     static Schedule BuildSchedule(CreateScheduleRequest req, ScheduleScope scope, string userId)
     {
         var now = DateTimeOffset.UtcNow;
+        ValidateMonthly(req.Kind, req.DayOfMonth);
         return new Schedule
         {
             Id = Guid.NewGuid(),
@@ -116,6 +130,8 @@ public sealed class ScheduleService
             TimeOfDay = req.TimeOfDay,
             Weekday = req.Weekday,
             IntervalHours = req.IntervalHours,
+            DayOfMonth = req.DayOfMonth,
+            AutoSendMail = req.AutoSendMail,
             NotifyEnabled = req.NotifyEnabled,
             EmailTo = NormalizeAddresses(req.EmailTo),
             EmailCc = NormalizeAddresses(req.EmailCc),
@@ -124,7 +140,8 @@ public sealed class ScheduleService
             UpdatedAt = now,
             // 以台北牆鐘規則算出下次觸發，寫入 UTC
             NextRunAt = NextRunCalculator.ComputeNext(
-                req.Kind, now, req.TimeOfDay, req.Weekday, req.IntervalHours),
+                req.Kind, now, req.TimeOfDay, req.Weekday, req.IntervalHours,
+                dayOfMonth: req.DayOfMonth),
         };
     }
 
@@ -132,11 +149,35 @@ public sealed class ScheduleService
     async Task<ScheduleDto> ToDtoAsync(Schedule s, CancellationToken ct)
     {
         var last = await _repo.GetLatestRunAsync(s.Id, ct);
+        if (last is not null)
+            await RefreshWaitingRunAsync(s, last, ct);
         return new ScheduleDto(
             s.Id, s.UserId, s.Scope, s.Title, s.Prompt, s.AssistantId, s.ApiUrl, s.Kind,
             s.TimeOfDay, s.Weekday, s.IntervalHours, s.Enabled,
             s.NotifyEnabled, s.EmailTo, s.EmailCc,
-            s.NextRunAt, s.LastRunAt, last?.ThreadId);
+            s.NextRunAt, s.LastRunAt, last?.ThreadId, s.DayOfMonth, s.AutoSendMail);
+    }
+
+    /// <summary>拒絕超出月份日期範圍的設定，不允許默默修正輸入。</summary>
+    static void ValidateMonthly(ScheduleKind kind, int? day)
+    {
+        if (!Enum.IsDefined(kind))
+            throw new ArgumentException("不支援的排程週期。");
+        if (kind == ScheduleKind.Monthly && day is < 1 or > 31)
+            throw new ArgumentException("每月日期必須介於 1 與 31。");
+    }
+
+    /// <summary>使用者在原對話確認後，查詢紀錄時同步完成狀態；連線失敗不冒稱完成。</summary>
+    async Task RefreshWaitingRunAsync(Schedule schedule, ScheduleRun run, CancellationToken ct)
+    {
+        if (run.Status != ScheduleRunStatus.WaitingForConfirmation || run.ThreadId is null)
+            return;
+        var result = await _lg.GetThreadResultAsync(schedule.ApiUrl, run.ThreadId, ct);
+        if (!result.Ok || result.WaitingForConfirmation)
+            return;
+        run.Status = ScheduleRunStatus.Succeeded;
+        run.FinishedAt = DateTimeOffset.UtcNow;
+        await _repo.UpdateRunAsync(run, ct);
     }
 
     /// <summary>正規化 To／Cc：trim；空白則存 null。</summary>

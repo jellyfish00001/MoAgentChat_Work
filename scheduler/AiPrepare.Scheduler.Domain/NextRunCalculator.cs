@@ -10,7 +10,8 @@ public static class NextRunCalculator
         TimeOnly? timeOfDay,
         DayOfWeek? weekday,
         int? intervalHours,
-        string timeZoneId = "Asia/Taipei")
+        string timeZoneId = "Asia/Taipei",
+        int? dayOfMonth = null)
     {
         var tz = ResolveTz(timeZoneId);
         var local = TimeZoneInfo.ConvertTime(fromUtc, tz);
@@ -20,8 +21,24 @@ public static class NextRunCalculator
             ScheduleKind.Daily => NextDaily(local, timeOfDay ?? new TimeOnly(9, 0), tz),
             ScheduleKind.Weekly => NextWeekly(local, timeOfDay ?? new TimeOnly(9, 0), weekday ?? DayOfWeek.Monday, tz),
             ScheduleKind.EveryNHours => NextEveryNHours(fromUtc, Math.Max(1, intervalHours ?? 1)),
+            ScheduleKind.Monthly => NextMonthly(local, timeOfDay ?? new TimeOnly(9, 0), dayOfMonth ?? 1, tz),
             _ => fromUtc.AddHours(1),
         };
+    }
+
+    /// <summary>每月指定日期；該月無此日則使用月底，不累積日期偏移。</summary>
+    static DateTimeOffset NextMonthly(DateTimeOffset localNow, TimeOnly tod, int day, TimeZoneInfo tz)
+    {
+        if (day is < 1 or > 31)
+            throw new ArgumentOutOfRangeException(nameof(day), "每月日期必須介於 1 與 31。");
+        var month = new DateOnly(localNow.Year, localNow.Month, 1);
+        DateTimeOffset Candidate(DateOnly first) => new(
+            first.Year, first.Month, Math.Min(day, DateTime.DaysInMonth(first.Year, first.Month)),
+            tod.Hour, tod.Minute, 0, localNow.Offset);
+        var candidate = Candidate(month);
+        if (candidate <= localNow)
+            candidate = Candidate(month.AddMonths(1));
+        return TimeZoneInfo.ConvertTime(candidate, TimeZoneInfo.Utc);
     }
 
     /// <summary>解析時區；Windows 可能沒有 IANA id 時改用台北標準時間。</summary>

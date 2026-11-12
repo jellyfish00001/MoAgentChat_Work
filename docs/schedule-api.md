@@ -8,6 +8,17 @@
 
 ---
 
+## Demo 對話建立排程
+
+Demo Agent 提供 `create_schedule` 工具，不再用前端固定句型攔截 Demo 的排程需求，可依前文整理完整執行內容。Agent 顯示確認卡，按「確認建立排程」後才呼叫 `POST /api/internal/schedules/personal`；成功後回傳排程 ID、下次時間，側欄自動刷新。不會建立公司排程，也不在建立時立刻執行。
+
+- 內部路由需要 `X-Job-Key`，沿用 `ScheduleService.CreateAsync`，歸屬為個人 `Scope=User`。
+- Agent 的 `SCHEDULER_API_URL` 指向 Scheduler 內網；`SCHEDULE_JOB_KEY` 與 Scheduler 的 Job Key 相同；`LANGGRAPH_API_URL` 是未來執行的 Agent 內網網址。金鑰不可放前端或工具參數，未設定時回報錯誤。
+- 使用者 ID 來自當次對話 metadata `user_id`，由前端目前 local user 提供，不讓 LLM 指定。現有 local user 是 Demo 識別，不是正式登入授權；正式多使用者環境應改用已驗證的登入身分。
+- 支援每日、每週、每月、每 N 小時；缺少每週日期／每月日期／間隔時應先詢問。自動寄信預設 false；僅受限內網測試模式生效。
+- 排程執行中不能再次用此工具建立排程，避免遞迴建立。
+- 財務等其他 Graph 保留原本前端排程辨識流程。
+
 ## 流程圖（建立與列表）
 
 使用者在 UI 操作時，API 只負責把「排程定義」寫進／讀出資料庫；此時**還不會**跑 AI、也**不會**寄信。  
@@ -15,19 +26,19 @@
 
 ### POST ① 建立排程（寫入）
 
-按「建立／儲存」→ 新增一列 `Schedules`（含 Prompt、週期、To／Cc）。
+按「建立／儲存」→ 新增一列 `Schedules`（含 Prompt、週期、信件自動發送開關）。
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "padding": 12, "useMaxWidth": true}}}%%
 flowchart LR
-  A[填表：標題／Prompt／週期／To／Cc] --> B["POST /api/schedules"]
+  A[填表：標題／Prompt／週期／信件自動發送] --> B["POST /api/schedules"]
   B --> C[ScheduleService.Create]
   C --> D[(Schedules 新增一列)]
 ```
 
 ### POST ② 列出排程（查詢）
 
-打開側欄或刷新 → 依 body 的 `userId` **只讀**個人排程；**不會**新建列。
+打開側欄或刷新 → 依 body 的 `userId` 查詢個人排程；**不會**新建排程。若上次執行等待確認，會向 LangGraph 查詢並同步該執行狀態。
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 36, "rankSpacing": 48, "padding": 12, "useMaxWidth": true}}}%%
@@ -45,6 +56,14 @@ flowchart LR
 
 真正跑 AI 時，Job 的 due-scanner 與 UI 的「立刻執行」走**同一條** `IScheduleRunExecutor`。  
 LangGraph 結束後，若 `NotifyEnabled` 且有 `EmailTo`，再走 **確定性** `INotificationSender`（本機 Draft）。
+
+排程的 thread 與 run metadata 都標記 `source=schedule`。「信件自動發送」預設關閉，執行到 `send_mail` 時停在確認卡；`runs/wait` 回傳 2xx 後仍查詢 thread 狀態，記錄 `WaitingForConfirmation=4`（`finishedAt=null`），不當作已完成。從側欄點排程名稱可開啟該 thread 確認或取消；之後查詢排程／執行紀錄會同步完成狀態。查詢 LangGraph 失敗會回報錯誤，不冒稱完成。
+
+`autoSendMail=true` 在管理者明確啟用 `TEST_SCHEDULE_AUTO_MAIL=true` 的受限內網測試模式可免確認；只允許核准的兩個測試信箱，設定要求見[寄信功能](./mail.md#免登入內網測試模式)。其他環境仍人工確認。沒有登入頁，local user 只是測試識別，不是可信身分；自訂服務簽章、HTTP middleware 與 nonce DB 維持移除。正式免確認仍須接入公司登入、排程所有權及 Scheduler 服務身分，既有偏好需重新授權。既有 `notifyEnabled` 是獨立 Draft 通知；待補驗證清單仍保留。
+
+執行及狀態查詢只使用環境設定的 `LANGGRAPH_API_URL`（預設本機 `127.0.0.1:2024`），不使用使用者輸入的 `apiUrl` 作為請求目的地；不跟隨重新導向。**登入及排程所有權仍未實作**：人工確認也不會阻止他人透過未保護的 API 修改／執行排程或恢復別人的對話，正式上線前仍須加入存取控制。
+
+週期數值維持向後相容：`Daily=0`、`Weekly=1`、`EveryNHours=2`，新增 `Monthly=3`。每月使用 `dayOfMonth`（1–31，省略預設 1）與 `timeOfDay`，以 Asia/Taipei 計算；該月無此日期則在月底執行，隔月仍依原日期計算。建立／更新的 `autoSendMail` 省略時分別為 false／不變。EF Migration 為既有資料增加欄位，不清除排程。
 
 ```mermaid
 %%{init: {"flowchart": {"nodeSpacing": 40, "rankSpacing": 70, "padding": 16}}}%%
@@ -85,7 +104,7 @@ flowchart TD
 
 | 步驟 | 誰做 | 結果 |
 |------|------|------|
-| 使用者填表 | Chat UI | 標題、Prompt、每日／每週／每 N 小時；可選通知 To／Cc |
+| 使用者填表 | Chat UI | 標題、Prompt、每日／每週／每月／每 N 小時；信件自動發送預設關閉 |
 | `POST /api/schedules` | Scheduler Api | 強制 `Scope=User`（一般使用者建不出公司排程） |
 | 寫入 DB | `ScheduleService` | 一列 `Schedules`，含首次 `NextRunAt`、`Enabled=true`、可選 `NotifyEnabled`／`EmailTo`／`EmailCc` |
 | `POST /api/schedules/list` | 同一 Api | body 帶 `userId`；**只**列出該使用者個人排程；看不到 `Scope=Company` |

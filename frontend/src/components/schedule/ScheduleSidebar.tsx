@@ -68,7 +68,7 @@ function ScheduleRow({
         type="button"
         className="text-foreground hover:bg-muted min-w-0 flex-1 truncate rounded-md px-1.5 py-1 text-left text-sm"
         onClick={onOpenLast}
-        title={item.title}
+        title={`${item.title}｜自動寄信：${item.autoSendMail ? "開啟（僅受限測試模式生效）" : "關閉"}`}
       >
         {item.title}
       </button>
@@ -164,8 +164,8 @@ export function ScheduleSidebar({
   }, [userId]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    if (!stream.isLoading) void refresh();
+  }, [refresh, stream.isLoading]);
 
   /** 持久化排程區塊展開狀態。 */
   useEffect(() => {
@@ -239,7 +239,10 @@ export function ScheduleSidebar({
                 )}
               </span>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={6}>
+            <TooltipContent
+              side="top"
+              sideOffset={6}
+            >
               {expanded ? "摺疊聊天" : "展開聊天"}
             </TooltipContent>
           </Tooltip>
@@ -273,7 +276,10 @@ export function ScheduleSidebar({
         >
           {loading ? (
             Array.from({ length: 2 }).map((_, i) => (
-              <Skeleton key={i} className="mx-1 h-8 rounded-lg" />
+              <Skeleton
+                key={i}
+                className="mx-1 h-8 rounded-lg"
+              />
             ))
           ) : sorted.length === 0 ? (
             <p className="text-muted-foreground px-3 py-1 text-xs">

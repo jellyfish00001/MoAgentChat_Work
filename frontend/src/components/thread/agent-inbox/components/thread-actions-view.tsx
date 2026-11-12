@@ -1,60 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Interrupt } from "@langchain/langgraph-sdk";
 import { Button } from "@/components/ui/button";
-import { ThreadIdCopyable } from "./thread-id";
 import { InboxItemInput } from "./inbox-item-input";
 import useInterruptedActions from "../hooks/use-interrupted-actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useQueryState } from "nuqs";
-import { constructOpenInStudioURL, buildDecisionFromState } from "../utils";
+import { buildDecisionFromState } from "../utils";
 import { Decision, HITLRequest, DecisionType, ActionRequest } from "../types";
 import { useStreamContext } from "@/providers/Stream";
 
 interface ThreadActionsViewProps {
   interrupt: Interrupt<HITLRequest>;
-  handleShowSidePanel: (showState: boolean, showDescription: boolean) => void;
-  showState: boolean;
-  showDescription: boolean;
-}
-
-function ButtonGroup({
-  handleShowState,
-  handleShowDescription,
-  showingState,
-  showingDescription,
-}: {
-  handleShowState: () => void;
-  handleShowDescription: () => void;
-  showingState: boolean;
-  showingDescription: boolean;
-}) {
-  return (
-    <div className="flex flex-row items-center justify-center gap-0">
-      <Button
-        variant="outline"
-        className={cn(
-          "rounded-l-md rounded-r-none border-r-[0px]",
-          showingState ? "text-foreground" : "bg-panel",
-        )}
-        size="sm"
-        onClick={handleShowState}
-      >
-        State
-      </Button>
-      <Button
-        variant="outline"
-        className={cn(
-          "rounded-l-none rounded-r-md border-l-[0px]",
-          showingDescription ? "text-foreground" : "bg-panel",
-        )}
-        size="sm"
-        onClick={handleShowDescription}
-      >
-        Description
-      </Button>
-    </div>
-  );
 }
 
 function isValidHitlRequest(
@@ -77,18 +33,14 @@ function getDecisionStatus(
 }
 
 function getActionTitle(action?: ActionRequest) {
-  return action?.name ?? "Unknown interrupt";
+  if (action?.name === "create_schedule") return "確認建立排程";
+  return action?.name === "send_mail"
+    ? "確認寄信"
+    : (action?.name ?? "待確認操作");
 }
 
-export function ThreadActionsView({
-  interrupt,
-  handleShowSidePanel,
-  showDescription,
-  showState,
-}: ThreadActionsViewProps) {
+export function ThreadActionsView({ interrupt }: ThreadActionsViewProps) {
   const stream = useStreamContext();
-  const [threadId] = useQueryState("threadId");
-  const [apiUrl] = useQueryState("apiUrl");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [addressedActions, setAddressedActions] = useState<
     Map<number, Decision>
@@ -132,10 +84,8 @@ export function ThreadActionsView({
     hasAddedResponse,
     streaming,
     supportsMultipleMethods,
-    streamFinished,
     loading,
     handleSubmit,
-    handleResolve,
     setSelectedSubmitType,
     setHasAddedResponse,
     setHasEdited,
@@ -151,21 +101,6 @@ export function ThreadActionsView({
     setCurrentIndex(0);
     setAddressedActions(new Map());
   }, [interrupt]);
-
-  const handleOpenInStudio = () => {
-    if (!apiUrl) {
-      toast.error("Error", {
-        description: "Please set the LangGraph deployment URL in settings.",
-        duration: 5000,
-        richColors: true,
-        closeButton: true,
-      });
-      return;
-    }
-
-    const studioUrl = constructOpenInStudioURL(apiUrl, threadId ?? undefined);
-    window.open(studioUrl, "_blank");
-  };
 
   const handleApproveAll = useCallback(() => {
     if (!hasMultipleActions) return;
@@ -259,11 +194,14 @@ export function ThreadActionsView({
     });
   }, [actionRequests, reviewConfigs, hasMultipleActions]);
 
-  const handleSaveDecision = () => {
-    const { decision, error } = buildDecisionFromState(
-      humanResponse,
-      selectedSubmitType,
-    );
+  const handleSaveDecision = (
+    _event:
+      React.MouseEvent<HTMLButtonElement, MouseEvent> | React.KeyboardEvent,
+    explicitDecision?: Decision,
+  ) => {
+    const { decision, error } = explicitDecision
+      ? { decision: explicitDecision }
+      : buildDecisionFromState(humanResponse, selectedSubmitType);
 
     if (!decision || error) {
       toast.error("Error", {
@@ -298,8 +236,8 @@ export function ThreadActionsView({
 
   if (!isValidHitlRequest(interrupt)) {
     return (
-      <div className="flex min-h-full w-full flex-col items-center justify-center rounded-sm bg-muted/50 p-8">
-        <p className="text-sm text-muted-foreground">
+      <div className="bg-muted/50 flex min-h-full w-full flex-col items-center justify-center rounded-sm p-8">
+        <p className="text-muted-foreground text-sm">
           Unable to render interrupt. The data provided is not in the expected
           HITL format.
         </p>
@@ -309,53 +247,26 @@ export function ThreadActionsView({
   const interruptValue = singleActionInterrupt.value as HITLRequest;
 
   return (
-    <div className="flex min-h-full w-full max-w-full flex-col gap-9">
+    <div className="flex w-full max-w-full flex-col gap-4">
       <div className="flex w-full flex-wrap items-center justify-between gap-3">
         <div className="flex items-center justify-start gap-3">
-          <p className="text-2xl tracking-tighter text-pretty">
+          <p className="text-lg font-semibold text-pretty">
             {hasMultipleActions
               ? `${currentTitle} (${currentIndex + 1}/${actionRequests.length})`
               : currentTitle}
           </p>
-          {threadId && <ThreadIdCopyable threadId={threadId} />}
-        </div>
-        <div className="flex flex-row items-center justify-start gap-2">
-          {apiUrl && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex items-center gap-1 bg-panel"
-              onClick={handleOpenInStudio}
-            >
-              Studio
-            </Button>
-          )}
-          <ButtonGroup
-            handleShowState={() => handleShowSidePanel(true, false)}
-            handleShowDescription={() => handleShowSidePanel(false, true)}
-            showingState={showState}
-            showingDescription={showDescription}
-          />
         </div>
       </div>
 
       <div className="flex w-full flex-row flex-wrap items-center justify-start gap-2">
-        <Button
-          variant="outline"
-          className="border-border bg-panel font-normal text-foreground"
-          onClick={handleResolve}
-          disabled={actionsDisabled}
-        >
-          Mark as Resolved
-        </Button>
         {hasMultipleActions && allAllowApprove && (
           <Button
             variant="outline"
-            className="border-border bg-panel font-normal text-foreground"
+            className="border-border bg-panel text-foreground font-normal"
             onClick={handleApproveAll}
             disabled={actionsDisabled}
           >
-            Approve All
+            確認全部
           </Button>
         )}
       </div>
@@ -437,12 +348,6 @@ export function ThreadActionsView({
               : `Submit all ${actionRequests.length} decisions`}
           </Button>
         </div>
-      )}
-
-      {!hasMultipleActions && streamFinished && (
-        <p className="text-base font-medium text-green-600">
-          Successfully finished Graph invocation.
-        </p>
       )}
     </div>
   );

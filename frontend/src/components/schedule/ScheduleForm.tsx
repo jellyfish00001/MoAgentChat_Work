@@ -72,6 +72,8 @@ export function ScheduleForm({
   const [timeOfDay, setTimeOfDay] = useState("09:00");
   const [weekday, setWeekday] = useState(1);
   const [intervalHours, setIntervalHours] = useState(3);
+  const [dayOfMonth, setDayOfMonth] = useState(1);
+  const [autoSendMail, setAutoSendMail] = useState(false);
   /** true＝暫不執行 → API enabled=false。 */
   const [paused, setPaused] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -85,6 +87,8 @@ export function ScheduleForm({
       setTimeOfDay("09:00");
       setWeekday(1);
       setIntervalHours(3);
+      setDayOfMonth(1);
+      setAutoSendMail(false);
       setPaused(false);
       return;
     }
@@ -94,6 +98,8 @@ export function ScheduleForm({
     setTimeOfDay(apiTimeToInput(initial.timeOfDay));
     setWeekday(initial.weekday ?? 1);
     setIntervalHours(initial.intervalHours ?? 3);
+    setDayOfMonth(initial.dayOfMonth ?? 1);
+    setAutoSendMail(initial.autoSendMail ?? false);
     setPaused(!initial.enabled);
   }, [initial]);
 
@@ -111,12 +117,11 @@ export function ScheduleForm({
         prompt: prompt.trim(),
         kind,
         timeOfDay:
-          kind === ScheduleKind.EveryNHours
-            ? null
-            : timeInputToApi(timeOfDay),
+          kind === ScheduleKind.EveryNHours ? null : timeInputToApi(timeOfDay),
         weekday: kind === ScheduleKind.Weekly ? weekday : null,
-        intervalHours:
-          kind === ScheduleKind.EveryNHours ? intervalHours : null,
+        intervalHours: kind === ScheduleKind.EveryNHours ? intervalHours : null,
+        dayOfMonth: kind === ScheduleKind.Monthly ? dayOfMonth : null,
+        autoSendMail,
       };
 
       if (editing && initial) {
@@ -130,8 +135,7 @@ export function ScheduleForm({
           userId,
           ...fields,
           assistantId: assistantId || "agent",
-          apiUrl:
-            resolveApiUrl(apiUrl, envApiUrl) || "http://127.0.0.1:2024",
+          apiUrl: resolveApiUrl(apiUrl, envApiUrl) || "http://127.0.0.1:2024",
         };
         // Create 契約無 enabled；暫不執行時建立後再 PATCH。
         const created = await createSchedule(body);
@@ -164,11 +168,14 @@ export function ScheduleForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="排程名稱"
-            className="h-9 min-w-0 max-w-full text-sm"
+            className="h-9 max-w-full min-w-0 text-sm"
           />
         </div>
         <div className="flex shrink-0 flex-col gap-1.5">
-          <Label htmlFor="schedule-prompt" className="shrink-0">
+          <Label
+            htmlFor="schedule-prompt"
+            className="shrink-0"
+          >
             提示內容
           </Label>
           <Textarea
@@ -190,6 +197,7 @@ export function ScheduleForm({
             options={[
               { value: String(ScheduleKind.Daily), label: "每日" },
               { value: String(ScheduleKind.Weekly), label: "每週" },
+              { value: String(ScheduleKind.Monthly), label: "每月" },
               { value: String(ScheduleKind.EveryNHours), label: "每 N 小時" },
             ]}
           />
@@ -202,7 +210,7 @@ export function ScheduleForm({
               type="time"
               value={timeOfDay}
               onChange={(e) => setTimeOfDay(e.target.value)}
-              className="h-9 w-full min-w-0 max-w-full text-sm"
+              className="h-9 w-full max-w-full min-w-0 text-sm"
             />
           </div>
         )}
@@ -234,6 +242,38 @@ export function ScheduleForm({
             />
           </div>
         )}
+        {kind === ScheduleKind.Monthly && (
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Label htmlFor="schedule-month-day">每月日期</Label>
+            <NumberStepper
+              id="schedule-month-day"
+              aria-label="每月日期"
+              min={1}
+              max={31}
+              value={dayOfMonth}
+              onChange={setDayOfMonth}
+            />
+            <p className="text-muted-foreground text-xs">
+              該月沒有指定日期時，於月底執行。
+            </p>
+          </div>
+        )}
+        <div className="border-border flex shrink-0 items-center justify-between gap-3 rounded-xl border px-3 py-2.5">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">信件自動發送</p>
+            <p className="text-muted-foreground text-xs break-words">
+              {autoSendMail
+                ? "內網測試模式啟用時自動寄送至核准測試信箱；否則仍須確認。"
+                : "預設關閉；排程需要寄信時，停在對話確認卡，等待你確認。"}
+            </p>
+          </div>
+          <Switch
+            checked={autoSendMail}
+            onCheckedChange={setAutoSendMail}
+            aria-label="信件自動發送"
+            className="shrink-0"
+          />
+        </div>
         <div className="border-border flex shrink-0 items-center justify-between gap-3 rounded-xl border px-3 py-2.5">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">暫不執行</p>
@@ -261,7 +301,12 @@ export function ScheduleForm({
             取消
           </Button>
         ) : null}
-        <Button type="submit" variant="accent" size="sm" disabled={submitting}>
+        <Button
+          type="submit"
+          variant="accent"
+          size="sm"
+          disabled={submitting}
+        >
           {submitting ? (
             <LoaderCircle className="size-4 animate-spin" />
           ) : editing ? (

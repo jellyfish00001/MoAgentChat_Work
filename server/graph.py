@@ -1,10 +1,11 @@
 import json
 from collections.abc import Sequence
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
-from langchain_core.messages import BaseMessage, SystemMessage, ToolMessage
+from langchain_core.messages import BaseMessage, SystemMessage, ToolCall, ToolMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
+from langgraph.func import task
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.ui import AnyUIMessage, push_ui_message, ui_message_reducer
@@ -12,6 +13,8 @@ from langgraph.types import interrupt
 from typing_extensions import TypedDict
 
 from flows.llm.azure_apim import get_chat_model
+from flows.tools.mail import MAIL_PROMPT, load_mail_tools
+from flows.tools.schedule import SCHEDULE_PROMPT, create_schedule
 
 # 正式 demo agent：與業務 graphs 共用單一 LLM factory（flows.llm）
 llm = get_chat_model(temperature=0)
@@ -95,7 +98,9 @@ def get_weather(city: str) -> str:
 
 
 # Augment the LLM with tools
-tools = [add, multiply, divide, get_weather]
+# 寄信工具：沒設定 MAIL_BACKEND 時回傳空 list，不影響現有部署
+mail_tools = load_mail_tools()
+tools = [add, multiply, divide, get_weather, create_schedule, *mail_tools]
 tools_by_name = {tool.name: tool for tool in tools}
 model_with_tools = llm.bind_tools(tools)
 
@@ -113,6 +118,8 @@ def llm_call(state: dict):
                     "Use read_uploaded_file(uri) when you need text content from an uploaded file. "
                     "Use write_markdown_file(filename, content) when the user asks you to create "
                     "a markdown report or downloadable markdown artifact."
+                    + (MAIL_PROMPT if mail_tools else "")
+                    + SCHEDULE_PROMPT
                 )
             )
         ]
@@ -133,13 +140,19 @@ def llm_call(state: dict):
     return {"messages": [ai_msg], "llm_calls": state.get("llm_calls", 0) + 1}
 
 
+@task
+def invoke_tool(tool_call: ToolCall) -> Any:
+    """執行單一工具，讓 LangGraph 在恢復中斷時重用已完成的結果。"""
+    tool = tools_by_name[tool_call["name"]]
+    return tool.invoke(tool_call["args"])
+
+
 def tool_node(state: dict, config: RunnableConfig):
-    """Performs the tool call"""
+    """依序執行工具，避免後續確認中斷時重複執行已完成的寄信。"""
 
     result = []
     for tool_call in state["messages"][-1].tool_calls:
-        tool = tools_by_name[tool_call["name"]]
-        observation = tool.invoke(tool_call["args"])
+        observation = invoke_tool(tool_call).result()
         # 帶上 name，方便下一輪 llm_call 判斷是哪個 tool 的結果（用來決定要不要 push UI）
         result.append(
             ToolMessage(
