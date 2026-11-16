@@ -9,7 +9,7 @@
 預覽：開 `.md` → `Ctrl+Shift+V`（建議擴充 `bierner.markdown-mermaid`）。  
 每個 `01`／`02`／`03`：**上半**＝現行 Graph；**下半「原始客戶需求」**＝客戶 README 原樣附錄。附錄 ≠ 已 100% 實作。
 
-- **業務待決問題（請回覆）：** [OPEN-QUESTIONS-請回覆.txt](OPEN-QUESTIONS-請回覆.txt)（純文字，可貼 Jira）；完整追蹤 [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)  
+- **業務待決問題：** [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)（目前 QV 只追蹤 FAA-29 規則與人工答案的兩項差異）
 - **產出形態：** 規則／金額／Excel／HTML＝程式；LLM＝文案節點。
 
 ## 三流程總覽
@@ -19,6 +19,8 @@
 | 1 | `rework_mo_detective` | 情形＋六大檢查＋行級 Reason | `narrate` 短報告（不改 Reason） | [01](01-範本-rework_mo_detective.md) |
 | 2 | `rd_risk_dashboard` | 六類異常＋KPI＋HTML 模板 | `narrate` 研判／行動 | [02](02-範本-rd_risk_dashboard.md) |
 | 3 | `qv_dms_pipeline` | Cover 回填鏈＋期別分析 | `narrate` 改善方向 | [03](03-範本-qv_dms_pipeline.md) |
+
+FAA-29 Sprint 2 的 QV DMS 固定測試資料與驗收步驟見 [測試工作流](FAA-29-SPRINT2-TEST.md)。
 
 原則（見 [`.cursor/guides/domain-vs-llm.md`](../../.cursor/guides/domain-vs-llm.md)）：**數字與規則用程式；語意與對外文案才給 LLM。**
 

@@ -1,76 +1,109 @@
 # 【範本／本機】QV DMS 整理及分析（`qv_dms_pipeline`）
 
 > 非正式。程式：`server/flows/graphs/qv_dms_pipeline/`；規則：`server/flows/domain/qv_dms/`；資料：`server/testdata/qv_dms/`。  
+> FAA-29 Sprint 2 固定資料與本機驗收流程：[FAA-29-SPRINT2-TEST.md](FAA-29-SPRINT2-TEST.md)。
 > 預覽：`Ctrl+Shift+V`。  
 > **待決問題：** [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)
 
-## 一句話
+## FAA-29 Sprint 2 規格狀態
 
-Cover 回填鏈（1.1–1.5）為程式；缺當期材料分析則跳過 1.1（QV-02）；LLM 只作文案；Email／Teams 只產草稿。
+Sprint 2 的唯一回填規格為 [FAA-29-SPRINT2-TEST.md](FAA-29-SPRINT2-TEST.md)：一份 202610 活頁簿、五張必要來源 Sheet、依來源規則回填 Cover、產出逐筆追溯，並與人工標準答案驗收。下列流程圖是**目標驗收流程**，不是目前程式已完成的宣告。舊版「缺當期材料分析就跳過」及分開來源檔的回填邏輯已不適用於 Sprint 2。
 
-## 節點 I/O
+目前程式仍是舊版分階段 Graph；不得把它的輸出視為 Sprint 2 通過。新流程實作完成前，驗收狀態為未通過。
 
-| 節點 | 類型 | 說明 |
-|------|------|------|
-| `inventory` | 程式 | 檔案盤點 |
-| `cover_init`…`cover_inv` | 程式 | Cover 工作簿逐步回填 |
-| `cover_format` | 程式 | 通知草稿 |
-| `analyze_periods` | 程式 | 當／上期 Top3 |
-| `narrate` | LLM | 改善方向 |
-| `render_html`／`persist` | 程式 | HTML + Cover xlsx |
-
-## A. 目前可跑的 LangGraph（分階段）
+## A. FAA-29 Sprint 2 目標流程（尚待實作／驗收）
 
 ```mermaid
 flowchart TD
-  S([開始]) --> Inv[inventory<br/>程式：缺檔盤點]
-  Inv --> Init[cover_init<br/>工作簿副本]
+  S([開始]) --> I[讀取本機 FAA-29 測試活頁簿]
+  I --> V{Cover 與五張必要 Sheet／欄位齊全?}
+  V -- 否 --> E[列出缺少 Sheet／欄位<br/>停止；不產出回填檔]
+  V -- 是 --> C[讀取 Cover Period、PC 欄、分類列<br/>複製工作簿，保留樣式／公式]
 
-  subgraph coverChain [Cover 回填鏈 程式]
-    Init --> M1[cover_material_pivot<br/>1.1 Pivot→PCL500]
-    M1 --> M2[cover_mo<br/>1.2 报工差异／未分析]
-    M2 --> M3[cover_acct<br/>1.3 會計調整]
-    M3 --> M4[cover_6501<br/>1.4 Reserve]
-    M4 --> M5[cover_inv<br/>1.5 庫存 Reason]
-    M5 --> Fmt[cover_format<br/>草稿通知]
+  subgraph Fill [依 Profit Center 分類並回填]
+    C --> M[材料分析：Reason Code 1–11<br/>忽略 Material QV=0]
+    M --> P[生產工單：Code 12 MOH<br/>Code 13 逐 PC 倒算]
+    P --> A[會計調整：依 Text 關鍵字分類<br/>未命中歸 Other]
+    A --> R[65011201：Manual／當月 Auto／上月 Auto]
+    R --> N[庫存調整：Reason Code × PC<br/>938、944 歸併；累加既有值]
   end
 
-  Fmt --> AP[analyze_periods<br/>程式：當／上期]
-  AP --> N[narrate<br/>LLM：改善方向]
-  N --> H[render_html<br/>程式]
-  H --> P[persist<br/>Cover xlsx + html + json]
-  P --> E([結束])
+  N --> T[計算 Sampling、4 個 Sub-total、Total、Total QV Return]
+  T --> Q[逐 PC／分類驗證<br/>產生金額追溯明細與異常清單]
+  Q --> D{計算及回填驗證通過?}
+  D -- 否 --> F[回報失敗與差異<br/>不得宣告成功]
+  D -- 是，有異常資料 --> W[保存可識別資料<br/>輸出追溯並顯示警告]
+  D -- 是，無異常 --> O[保存並提供更新活頁簿下載]
+  W --> O
 
-  Files[(testdata/qv_dms)] -.-> Inv
-  Miss[缺當期材料分析?] -.-> M1
-  APIM[(Azure APIM)] -.-> N
+  O --> G{本機正常案例對人工標準答案?}
+  G -- 差異為 0 --> PASS[正常案例通過]
+  G -- 有差異 --> GAP[標記驗收失敗<br/>回到規則／標準答案差異決策]
+  E -. 情境二 .-> I
+  W -. 情境三 .-> I
+  subgraph Fixtures [固定測試案例]
+    FI[正常輸入 + 人工標準答案]
+    F2[缺少會計調整]
+    F3[材料分析 Profit Center 空白]
+  end
+  FI -.-> I
+  F2 -.-> I
+  F3 -.-> I
 ```
 
-## B. 完整規格：Cover 回填 → 分析 → 交付
+## B. 來源分類與 Cover 列位
 
 ```mermaid
-flowchart TD
-  S([開始]) --> C0[最新 Cover.xlsx]
-  C0 --> C1[材料分析 Pivot → PCL500]
-  C1 --> C2[生產工單 报工差异]
-  C2 --> C3[會計調整關鍵字]
-  C3 --> C4[65011201 Reserve]
-  C4 --> C5[庫存調整 Reason]
-  C5 --> Fmt[格式 + Email／Teams 草稿]
-  Fmt --> Viz[樞紐／HTML 儀表板]
-  Viz --> Cur[當期 Material Analysis]
-  Cur --> Prev[上期分析]
-  Prev --> Cmp[兩期對比]
-  Cmp --> Nar[差異敘事 LLM]
-  Nar --> Out[簡報與交互頁]
-  Out --> EndNode([結束])
+flowchart LR
+  subgraph Material [材料分析]
+    M1[PC × Reason 開頭 Code 1–11] --> M2[Cover row 10–20]
+    M3[Material QV=0 排除] -.-> M1
+  end
+  subgraph MO [生產工單]
+    P1[PC × Sum QV in MOH] --> P2[row 21 Code 12]
+    P3[PC × Sum QV Amt] --> P4[row 22 = 總額 − row 10–20 − row 21]
+    P2 --> P4
+    P4 --> P5[row 23 Sub-total = row 10–22]
+  end
+  subgraph Accounting [會計調整]
+    A1[Vendor Paid] --> A2[row 24 Vendor paid]
+    A3[不良報廢／非生產性工時] --> A4[row 27 Material scrap]
+    A5[QV offset with] --> A6[row 31 Adjust to 65011210-Manual]
+    A7[短裝材料扣款] --> A8[row 54 Code 918]
+    A9[其他文字／空白] --> A10[row 28 Other]
+  end
+  subgraph Reserve [65011201]
+    R1[Remark 含 QV offset with] --> R2[row 30 Manual]
+    R3[Remark 前 6 碼 = current_period] --> R4[row 35 Current Auto]
+    R5[Remark 前 6 碼 = previous_period] --> R6[row 34 Previous Auto]
+  end
+  subgraph Inventory [庫存調整單]
+    I1[PC × Reason Code × Amount-2] --> I2[row 對應相同 Reason Code]
+    I3[938 或 944] --> I4[row 65 Code 938&944]
+    I2 --> I5[累加 Cover 原值]
+    I4 --> I5
+    A8 --> I5
+  end
+  P5 --> S1[row 23 Sub-total]
+  A2 --> S2[row 29 Sub-total = row 24–28]
+  R2 --> S3[row 36 Sub-total = row 30–35]
+  I5 --> S4[row 78 Sub-total = row 37–77]
+  S1 --> T[row 79 Total = 四個 Sub-total 加總]
+  S2 --> T
+  S3 --> T
+  S4 --> T
+  T --> U[row 81 Total QV Return = row 79 + row 80]
+  MAT[Sampling Amount = 材料分析 PC 金額] --> SA[row 8]
+  S1 --> SR[row 9 Sampling Ratio = row 8 ÷ (row 23 − row 21)]
 ```
+
+PC 必須以來源欄值精確對應 Cover 第 6 行 E:G 的 `PCL500`、`PCK500`、`PCL120`；不寫死只有一個 PC。詳細來源欄位、規則次序、異常及 golden 差異見 [Sprint 2 測試工作流](FAA-29-SPRINT2-TEST.md)。
 
 ---
 
-## 原始客戶需求（Source Prompt／平台設定）
+## 歷史客戶資料（非本 Sprint 回填規格）
 
-> 以下自 `QV DMS整理及分析\README.md` **原樣附錄**，未改寫。流程圖／MVP 說明見上方；實作覆蓋率以程式與 trace 為準，勿假設全文已實作。
+> 下列為舊版多階段 QV 分析 Prompt 的歷史紀錄，不再作為 FAA-29 Sprint 2 Cover 回填規格。舊文提到的 66×7 Cover、分開來源檔、只填 PCL500、舊列號及缺當期檔跳過等內容，均不得覆蓋本文件的 Sprint 2 工作簿與規則。Sprint 2 唯一依據是 [FAA-29-SPRINT2-TEST.md](FAA-29-SPRINT2-TEST.md)；遇到新規則與人工答案不一致，依文件所列 Golden 差異決策停止，不得自行套用舊規則。
 
 # QV DMS整理及分析
 
@@ -94,11 +127,11 @@ flowchart TD
 | 三 | 两期变动分析，含Pivot和Material Analysis比较分析 | Analysis of changes between two periods, including comparison of Pivot and Material Analysis |
 | 四 | （空白） | （空白） |
 
-## Prompt 結構速覽
+## 歷史 Prompt 範圍（僅非回填分析參考）
 
 | 段落 | 內容 |
 |---|---|
-| 一、整理 Cover.xlsx | 1 材料分析 → Pivot → 回填 PCL500 ／ 2 生產工單（报工差异、未分析）／ 3 會計調整（Text 關鍵字）／ 4 65011201（QV Reserve 迴轉／提列）／ 5 庫存調整單（Reason Code）／ 6 格式設定 ／ 7 Email + Teams 通知 |
+| 舊一、整理 Cover.xlsx | **已被 FAA-29 Sprint 2 規格取代，不再使用**；見上方新流程圖及 [Sprint 2 測試工作流](FAA-29-SPRINT2-TEST.md)。 |
 | 二、可視化展示 | 附三段完整 Python：材料分析樞紐儀表板、其他 Sheet 樞紐儀表板、Cover 表儀表板（Cover 那段重複貼了兩次） |
 | 三、當期 QV 分析 | 每個 Reason 取 Top3 材料類別與最大料號 → Material Analysis sheet ＋ 文字報告、異常優先級矩陣 |
 | 四、上期 QV 整理 | 對 材料分析-previous.xlsx 做同樣的 Pivot 與 Material Analysis |
@@ -106,7 +139,7 @@ flowchart TD
 | 六、HTML 簡報 | 多頁幻燈片展示所有結果 |
 | 七、HTML 交互介面 | 三個下拉選單（數據資料／數據報表／數據分析）串起所有產出 |
 
-## ref data 對照
+## 舊版 ref data 對照（非 Sprint 2 輸入契約）
 
 | Prompt 要求的檔案 | ref data |
 |---|---|
@@ -1676,5 +1709,4 @@ cover表、cover仪表板
 保存为新的最新 Cover.xlsx
 后续所有步骤都继续基于这个新版本，不回退旧版
 ````
-
 

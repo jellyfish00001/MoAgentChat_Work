@@ -5,9 +5,7 @@
 
 狀態：`open` 待回覆｜`answered` 已決策｜`optimized` 已依冗餘優化（無需客戶回覆）。
 
-**給用戶填回覆（僅 open 題，純文字可貼 Jira）：** [OPEN-QUESTIONS-請回覆.txt](OPEN-QUESTIONS-請回覆.txt)
-
-**如何對回客戶原文**：每題「來源」含（1）範本檔錨點＝客戶 README **原樣附錄**（`## Source Prompt（客戶原文）` 區塊）；（2）**可 Ctrl+F 的原文摘錄**。在對應 `01`／`02`／`03` 範本下半部搜尋摘錄關鍵字即可定位客戶原本在說什麼。產品決策（非客戶句）會另外標明。
+**來源標註方式**：客戶原文問題附範本錨點與可搜尋摘錄；測試資料或產品決策問題則引用相應測試文件，並與客戶原文區分。
 
 ---
 
@@ -114,68 +112,36 @@
 
 ---
 
-## QV-01 Reason↔Cover 語義匹配規則表
+## QV-01 FAA-29 Sprint 2 規則與人工答案差異
 
 | 欄位 | 內容 |
 |------|------|
-| 流程 | `qv_dms_pipeline` |
-| 前因 | Cover 回填要把材料分析 Pivot 的 Reason **對到** Cover 的 Reason Code 再寫 PCL500；Prompt 寫「語義匹配」，卻幾乎沒附對照表（只有幾條繁中替換）。後來發現 `原因分类demo`／WCD 其實就是那 12 類標準名。 |
-| 後果 | 沒對照時：金額寫錯行、或 Pivot 總額對不上 Cover 驗證失敗一直重跑；有 12 類清單後主路徑可做，但若還有「別名→標準名」表未給，少數 Reason 仍會進 `unmatched`。 |
-| 來源（客戶） | [03-範本](03-範本-qv_dms_pipeline.md) → Source Prompt → `# 分析步驟` → **一、1、「材料分析.xlsx」** 之 **2)**（約 L176）。搜尋：`一一语义匹配`。 |
-| 原文摘錄 | `2).根据[Pivot.xlsx ]中的[Reason]列与[Cover.xls]中的[Reason Code]列进行一一语义匹配，匹配成功则将[Pivot.xlsx ]中[QV in Material(LC)]列金额写入对应行的D列单元格（列名为"PCL500"）` |
-| 來源（參考檔） | `server/testdata/qv_dms/原因分类demo.xlsx`、`QV DMS-WCD.xlsb`（見 REF-01）。 |
-| 建議作法 | **推薦（已被參考檔強化）**：以 `原因分类demo.xlsx`／WCD Cover 的 **12 類原因分类** 為 Cover 前段對照標準；Pivot Reason 經 Prompt 替換／去編號後與「原因分类」**字串相等**（可加 NFKC）匹配寫入 PCL500。匹配不到列入 `unmatched_reasons`。 |
-| 狀態 | answered（參考檔可解主路徑；仍請確認是否還有「語義別名」表） |
-| 參考檔結論 | `原因分类demo` 的 12 類與現行 `Cover.xlsx` 前 12 列 Reason Code **完全一致**。 |
+| 流程 | `qv_dms_pipeline`／FAA-29 DMS Report 回填 |
+| 已核對資料 | [Sprint 2 測試工作流](FAA-29-SPRINT2-TEST.md) 中的正常輸入、人工答案及兩個異常檔；五張來源欄位、PC、Cover 列位與 202610 期間均已直接讀取核對。 |
+| 差異一：材料分類 | 新規則依 Reason 開頭 Code 分類。輸入表 Code 7 合計 17,153.51、Code 10 合計 418,664.30；人工答案分別是 19,061.41、416,756.40，相差 1,907.90 且互相抵銷。新規則沒有說明重分類條件。 |
+| 差異二：65011201 Auto | 新規則依 Remark 前 6 碼月份分類；202610 同時包含 14,010 筆 `QV/PV/STD Change Reserve`（1,478,195.56）及 23,074 筆 `QV/PV/STD Change Adjustment`（-476,953.86）。人工答案只符合前者；按新規則計算會與 golden 相差 -476,953.86。 |
+| 影響 | 依新規則實算後，Cover 有 6 個金額儲存格與人工答案不一致（E16、E19、E35、E36、E79、E81），正常案例不能標記通過。 |
+| 需 PO 決定 | (1) Code 7／10 是否有未寫出的 1,907.90 分類或調整邏輯；若無，請確認以來源 Code 為準並修正 golden。(2) 65011201 Auto 是否需限定 `QV/PV/STD Change Reserve`；若無，應按月份規則納入 Adjustment 並修正 golden。不得暗中套用舊規則。 |
+| 其他已確認 | 情境二缺 `會計調整`；情境三材料分析 26,188 筆 Profit Center 全空白。成功／失敗／警告訊息、追溯欄位及本機不發送 Email／Teams 已寫入 Sprint 2 驗收文件；此處不再保留舊 QV 問題。 |
+| 狀態 | open（僅上述兩個 Golden 對帳決策阻擋正常案例） |
 
 ---
 
-## QV-02 缺當期材料分析.xlsx 時是否硬停
+## REF-01 其他流程 Prompt 未提及檔——預期用途？
 
 | 欄位 | 內容 |
 |------|------|
-| 流程 | `qv_dms_pipeline` |
-| 前因 | 步驟 1.1（Pivot→PCL500）一定要**當期** `材料分析.xlsx`；客戶示範包／testdata 常常只有 `材料分析-previous.xlsx`。WCD.xlsb 裡雖有材料分析 sheet，但不是獨立 xlsx 契約檔。 |
-| 後果 | 整條 pipeline 硬停 → 报工／會計也測不到；只跳過 1.1 → Cover 前段 PCL500 空著，但後面步驟與產出仍可驗證。 |
-| 來源（客戶） | [03-範本](03-範本-qv_dms_pipeline.md) → Source Prompt → 開頭「我会提供 6 个文件」＋步驟 **一、1、「材料分析.xlsx」整理与回填**（約 L146–162）。搜尋：`材料分析.xlsx` 與 `我会提供 6 个文件`。 |
-| 原文摘錄 | `-我会提供 6 个文件：生產工單.xlsx、材料分析.xlsx、…及 Cover.xlsx。`；步驟標題：`1、「材料分析.xlsx」整理与回填`（把當期材料分析當必備輸入）。 |
-| 來源（產品／testdata） | 本機常缺當期檔 → 暫行「1.1 硬停該步、其餘可跑」（非客戶句）。 |
-| 建議作法 | **已定暫行**：一.1 硬停該步（messages 標明），一.2～一.5 仍可跑；總驗證標「材料分析未回填」。 |
-| 狀態 | answered |
-
----
-
-## QV-03 Email／Teams 是否實發
-
-| 欄位 | 內容 |
-|------|------|
-| 流程 | `qv_dms_pipeline` |
-| 前因 | Prompt 步驟要求跑完 Cover 後發 Email／Teams；本機開發與 CI **不該**真的打到公司信箱／頻道。 |
-| 後果 | 若實發：測試一次就打擾真實收件者；若不做任何產物：又像漏了「通知」步驟。折衷是只產草稿檔證明節點有跑。 |
-| 來源 | [03-範本](03-範本-qv_dms_pipeline.md) → Source Prompt → **`7、寄送邮件与teams通知`**（約 L243–246）。搜尋：`寄送邮件与teams通知`。 |
-| 原文摘錄 | `将填充完成的[cover.xlsx]表发送Email给D23040558@wistron.com，并且发送 Microsoft Teams 通知给D23040558@wistron.com`；`邮件主旨为「QV DMS分析表-YYYYMM」…` |
-| 建議作法 | **已定**：只寫 `outputs/` 草稿 txt／markdown，不呼叫 SMTP／Teams API。 |
-| 狀態 | answered |
-
----
-
-## REF-01 Prompt 未提及檔——預期用途？（已做內容交叉檢驗）
-
-| 欄位 | 內容 |
-|------|------|
-| 流程 | 跨流程（尤其 `qv_dms`、`rd_risk`） |
-| 前因 | 客戶 Agent 包的 `ref data` 除了 Prompt 列的輸入表，還塞了未點名的 demo／樣張／說明（原因分类、WCD.xlsb、Dismantle.docx、demo.html）。這些常是「沒寫進 Prompt 的答案」；先前怕誤當契約輸入曾沒放進 repo，現已放入 testdata 但程式多半還沒讀。 |
-| 後果 | 不採用 → Cover 匹配、拆解 Key Parts、看板版型容易偏離客戶示範；亂採用 → 可能把 30MB 樣張當線上唯一輸入、或把說明文件當資料表。需要你確認每檔是執行／golden／純人工。 |
-| 來源 | **非單一 Prompt 句**——客戶原始包裡有、但 Source Prompt **未點名**的檔；現存於 `server/testdata/`（2026-10-27 開啟檢查）。對照：各流程 Prompt「输入／数据来源」只列契約表，未列下表四檔。 |
+| 流程 | `rework_mo_detective`、`rd_risk_dashboard`；不含 FAA-29 QV |
+| 前因 | 其他流程的參考資料包含 `Dismantle.docx`、`demo.html` 等未明確列為執行輸入的檔案，仍需決定是規則知識或視覺參考。FAA-29 的輸入及人工答案已由 Sprint 2 四份活頁簿直接指定，不再由此項目追問。 |
+| 後果 | 不採用可能偏離其他流程的說明／版型；誤作執行輸入則會形成未定義契約。 |
+| 來源 | 其他流程的 ref data，非 FAA-29 QV Sprint 2 輸入。 |
 | 建議作法 | 預設採下表「建議」欄（B／C）；若不同意請改標。 |
-| 狀態 | open（等你確認建議標註；內容面已可驅動實作） |
+| 狀態 | open（僅其他流程） |
 
 ### REF 交叉檢驗 → 能回答哪些 OPEN 問題？
 
 | 參考檔 | 內容摘要 | 對 OPEN 問題 | 建議標註 |
 |--------|----------|--------------|----------|
-| `原因分类demo.xlsx`（sheet `DMS分析`） | 12 列：`Bom change`…`报工差异`（與 Cover 前 12 個 Reason Code **同名**） | **可解 QV-01 主路徑**：不是模糊「語義」，而是**固定原因分类清單** | **B** 執行時可當對照表／或直接信 Cover 前 12 列 |
-| `QV DMS-WCD.xlsb` | 完整樣張：Cover／DMS分析／**材料分析**／生產工單／會計調整／庫存／MOH／65011201；Cover 含序號 1–13（含「未分析」）與中英 Reason | **補強 QV-01**（樣張列名）；**補強 QV-02**：內含當期風格 `材料分析` sheet，可匯出成缺的 `材料分析.xlsx` 做測試 | **C** golden＋可抽 sheet 補 testdata；不必當線上唯一輸入 |
 | `Dismantle.docx` | 有頭 ZMPD／無頭 ZMPE；FA Key Parts＝MB,LCD,KB,SSD,BTY,電源,攝像頭…；PCBA＝CPU,SSD(on_board),DIMM,VGA,顯存…；應拆未拆檢查說明 | **補強拆解異常規則**（非 RD-01 命名）；不解答主料語意門檻 RD-02 | **B** 寫進 domain 拆解規則知識 |
 | `demo.html` | 完整深色看板：6 KPI、研判、圖表、行動表、分頁明細；含「倒置未發現／挪用範例」等文案與 Miss Rate 口徑註腳 | **視覺／結構 golden**（OPT-01 模板應對齊此檔）；**不**給「其他異常」自動命名演算法 → RD-01 仍 open | **C**（或 B＝CSS／區塊結構必須對齊） |
 
@@ -186,14 +152,11 @@
 | RM-01／02／03 | 未點名檔皆非 rework 規則補充 |
 | RD-01 | demo 只有已命名範例，無「如何發明 XX 異常」規則 |
 | RD-02 | 無相似度門檻或描述對照表 |
-| QV-03 | 與通知通道無關 |
 
 ### REF-01 請確認（可只回「同意建議」）
 
 | 檔案 | 建議 | 請確認／修改 |
 |------|------|----------------|
-| `原因分类demo.xlsx` | **B** | |
-| `QV DMS-WCD.xlsb` | **C**（並可匯出 `材料分析`→testdata） | |
 | `Dismantle.docx` | **B** | |
 | `demo.html` | **C**（版型對齊） | |
 
