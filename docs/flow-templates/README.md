@@ -7,7 +7,7 @@
 與 Cursor Plan 相同：Markdown + Mermaid。**這是本機／測試用示意圖**，不是正式環境 runbook。
 
 預覽：開 `.md` → `Ctrl+Shift+V`（建議擴充 `bierner.markdown-mermaid`）。  
-每個 `01`／`02`／`03`：**上半**＝現行 Graph；**下半「原始客戶需求」**＝客戶 README 原樣附錄。附錄 ≠ 已 100% 實作。
+`01`／`02` 的上半為現行 Graph，下半為客戶 README 附錄；`03` 已改為 FAA-29 單一活頁簿實作流程，下方舊 Prompt 僅為封存參考，不作為回填依據。
 
 - **業務待決問題：** [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md)（目前 QV 只追蹤 FAA-29 規則與人工答案的兩項差異）
 - **產出形態：** 規則／金額／Excel／HTML＝程式；LLM＝文案節點。

@@ -7,40 +7,39 @@
 
 ## FAA-29 Sprint 2 規格狀態
 
-Sprint 2 的唯一回填規格為 [FAA-29-SPRINT2-TEST.md](FAA-29-SPRINT2-TEST.md)：一份 202610 活頁簿、五張必要來源 Sheet、依來源規則回填 Cover、產出逐筆追溯，並與人工標準答案驗收。下列流程圖是**目標驗收流程**，不是目前程式已完成的宣告。舊版「缺當期材料分析就跳過」及分開來源檔的回填邏輯已不適用於 Sprint 2。
+Sprint 2 的唯一回填規格為 [FAA-29-SPRINT2-TEST.md](FAA-29-SPRINT2-TEST.md)：一份 202610 活頁簿、五張必要來源 Sheet、依來源規則回填 Cover、產出逐筆追溯，並與人工標準答案驗收。下列流程圖對應**目前實作的回填與驗收分流**。舊版「缺當期材料分析就跳過」及分開來源檔的回填邏輯已不適用於 Sprint 2。
 
-目前程式仍是舊版分階段 Graph；不得把它的輸出視為 Sprint 2 通過。新流程實作完成前，驗收狀態為未通過。
+Graph 已接上新規則的五個依序分類節點，並在 `persist` 完成回填、公式快取、追溯與選用的 Golden 比對，最後由 `respond` 顯示成功／警告／失敗。此回填鏈不再呼叫 LLM、舊 Pivot 語義匹配或期別分析。實作完成不等於人工答案驗收通過，Golden 的未決差異仍須明確列出。
 
-## A. FAA-29 Sprint 2 目標流程（尚待實作／驗收）
+## A. FAA-29 Sprint 2 現行 Graph
 
 ```mermaid
 flowchart TD
   S([開始]) --> I[讀取本機 FAA-29 測試活頁簿]
   I --> V{Cover 與五張必要 Sheet／欄位齊全?}
-  V -- 否 --> E[列出缺少 Sheet／欄位<br/>停止；不產出回填檔]
-  V -- 是 --> C[讀取 Cover Period、PC 欄、分類列<br/>複製工作簿，保留樣式／公式]
+  V -- 否 --> E[respond：列出缺少 Sheet／欄位<br/>停止；不產出回填檔／下載]
+  V -- 是 --> C[inventory：讀取 Cover Period、PC 欄、分類列<br/>建立每次執行獨立的工作目錄]
 
   subgraph Fill [依 Profit Center 分類並回填]
-    C --> M[材料分析：Reason Code 1–11<br/>忽略 Material QV=0]
-    M --> P[生產工單：Code 12 MOH<br/>Code 13 逐 PC 倒算]
-    P --> A[會計調整：依 Text 關鍵字分類<br/>未命中歸 Other]
-    A --> R[65011201：Manual／當月 Auto／上月 Auto]
-    R --> N[庫存調整：Reason Code × PC<br/>938、944 歸併；累加既有值]
+    C --> M[cover_material：Reason Code 1–11<br/>忽略 Material QV=0]
+    M --> P[cover_mo：MOH 與 QV 總額<br/>Code 13 逐 PC 倒算]
+    P --> A[cover_acct：Text 關鍵字分類<br/>未命中歸 Other]
+    A --> R[cover_6501：Manual／當月 Auto／上月 Auto]
+    R --> N[cover_inv：Reason Code × PC<br/>938、944 歸併；累加既有值]
   end
 
-  N --> T[計算 Sampling、4 個 Sub-total、Total、Total QV Return]
-  T --> Q[逐 PC／分類驗證<br/>產生金額追溯明細與異常清單]
+  N --> T[persist：依序套用分類金額<br/>計算 Sampling、4 個 Sub-total、Total、Total QV Return]
+  T --> Q[逐 PC／分類驗證<br/>更新公式快取；產生逐筆追溯<br/>原來源 Sheet 與樣式 ZIP 項目原樣保留]
   Q --> D{計算及回填驗證通過?}
-  D -- 否 --> F[回報失敗與差異<br/>不得宣告成功]
-  D -- 是，有異常資料 --> W[保存可識別資料<br/>輸出追溯並顯示警告]
-  D -- 是，無異常 --> O[保存並提供更新活頁簿下載]
-  W --> O
-
-  O --> G{本機正常案例對人工標準答案?}
-  G -- 差異為 0 --> PASS[正常案例通過]
-  G -- 有差異 --> GAP[標記驗收失敗<br/>回到規則／標準答案差異決策]
-  E -. 情境二 .-> I
-  W -. 情境三 .-> I
+  D -- 否 --> F[respond：回報失敗與差異<br/>不提供錯誤下載檔]
+  D -- 是 --> O[原子保存工作簿與 validation.json]
+  O --> G{有指定 Golden 或正常 fixture 自動比對?}
+  G -- 是 --> GC{E 至 Total 欄逐格差異為 0?}
+  GC -- 否 --> GAP[respond：golden_mismatch<br/>列出差異，只提供未驗收對帳檔]
+  GC -- 是 --> W{有未分類／無效資料?}
+  G -- 否 --> W
+  W -- 是 --> WARN[respond：warning<br/>提供可識別資料與追溯下載]
+  W -- 否 --> PASS[respond：success<br/>提供活頁簿與追溯下載]
   subgraph Fixtures [固定測試案例]
     FI[正常輸入 + 人工標準答案]
     F2[缺少會計調整]
@@ -94,10 +93,10 @@ flowchart LR
   S4 --> T
   T --> U[row 81 Total QV Return = row 79 + row 80]
   MAT[Sampling Amount = 材料分析 PC 金額] --> SA[row 8]
-  S1 --> SR[row 9 Sampling Ratio = row 8 ÷ (row 23 − row 21)]
+  S1 --> SR["row 9 Sampling Ratio = row 8 ÷ (row 23 − row 21)"]
 ```
 
-PC 必須以來源欄值精確對應 Cover 第 6 行 E:G 的 `PCL500`、`PCK500`、`PCL120`；不寫死只有一個 PC。詳細來源欄位、規則次序、異常及 golden 差異見 [Sprint 2 測試工作流](FAA-29-SPRINT2-TEST.md)。
+PC 由 Cover 第 6 行第 E 欄起動態走訪，不寫死代碼或欄數；此 fixture 的 E:G 為 `PCL500`、`PCK500`、`PCL120`，H 為 Total。詳細來源欄位、規則次序、異常及 Golden 差異見 [Sprint 2 測試工作流](FAA-29-SPRINT2-TEST.md)。來源公式金額讀取工作簿內已儲存的計算值，不執行外部連結或重新計算來源表。
 
 ---
 
@@ -1709,4 +1708,3 @@ cover表、cover仪表板
 保存为新的最新 Cover.xlsx
 后续所有步骤都继续基于这个新版本，不回退旧版
 ````
-

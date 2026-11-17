@@ -17,3 +17,15 @@ class QvDmsState(TypedDict, total=False):
     output_path: str
     output_xlsx: str
     output_html: str
+    input_xlsx: str
+    golden_xlsx: str
+    resolved_golden: str
+    output_dir: str
+    status: str
+    error: str
+    layout: dict[str, Any]
+    run_id: str
+    work_dir: str
+    stages: list[dict[str, Any]]
+    golden_comparison: dict[str, Any]
+    download_url: str
