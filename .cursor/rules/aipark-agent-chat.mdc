@@ -1,0 +1,21 @@
+---
+description: agent-chat-ui vendor conventions
+globs: frontend/**
+alwaysApply: false
+---
+
+# agent-chat-ui
+
+（原 `frontend/UPSTREAM.md` 併入此 rule；`frontend/` 不放指引 md。Upstream SHA 可記在本檔或 `.cursor/temp/`。）
+
+- Prefer minimal vendor edits. Vendor 核心：`src/providers/Stream.tsx`、`src/components/thread/**`（多數）、SDK 接線 — 升級時對 diff。
+- 本專案增量（可改）：`src/lib/local-graphs.ts`、`graph-switcher`／`finance-access-toggle`、`ui-theme`／`globals.css`／ascii ocean、`ocean-settings` 等。
+- Keep the UI folder name short (`frontend/`) on Windows; use `node-linker=hoisted` in `.npmrc`.
+- Local defaults: Deployment URL `http://localhost:2024`（或實際埠）；Graph ID 對齊 `langgraph.dev.json`／正式 `langgraph.json`。
+- Graph state must expose `messages` for the chat UI SDK.
+- Do not put LangSmith / Azure secrets in client-side env（勿 `NEXT_PUBLIC_*` secrets）for local LangGraph Server.
+
+## Upstream 版本（選填）
+
+- Repo: `langchain-ai/agent-chat-ui`
+- Commit: _待填_

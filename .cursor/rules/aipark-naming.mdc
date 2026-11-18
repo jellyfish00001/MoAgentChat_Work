@@ -1,0 +1,31 @@
+---
+description: 跨層命名（PG／C#／JSON／Python／React／env）— 分層慣例，禁止硬套同一風格
+alwaysApply: true
+---
+
+# 跨層命名（強制）
+
+詳表與資料流：[`guides/naming-conventions.md`](../guides/naming-conventions.md)。排程欄位對照：`docs/schedule-db.md`。
+
+## 速查（缺＝FAIL）
+
+| 層 | 必須 |
+|----|------|
+| PostgreSQL 表／欄 | 小寫 **`snake_case`**（表名複數）；新欄必有 **`COMMENT`**（EF `HasComment`） |
+| C# 公開類型／成員 | **`PascalCase`**；EF 用 `UseSnakeCaseNamingConvention` 對到 PG |
+| Scheduler API ↔ React JSON | **`camelCase`**（勿擅自改成 snake_case） |
+| Python 函式／變數／模組檔 | **`snake_case`**；類別／Pydantic model **`PascalCase`** |
+| LangGraph state／上游 payload | **`snake_case`**（與 SDK／既有鍵一致） |
+| React 元件／型別名 | **`PascalCase`**；變數／props／物件欄 **`camelCase`**；DOM 屬性 camelCase |
+| 環境變數／Secret 鍵 | **`SCREAMING_SNAKE`**；值不進 Git／映像 |
+
+## 禁止
+
+- PG 使用 camelCase／PascalCase（需雙引號、易踩大小寫）。
+- 為「統一」把 C# 公開屬性改成 snake_case，或把 JSON API 改成 snake_case 卻不改前端。
+- 新排程 DB 欄無 COMMENT、無更新 `docs/schedule-db.md` 快照。
+
+## 與其他 rule 的關係
+
+- 語言細節仍看：`aipark-python-langchain`、`aipark-langgraph`、`aipark-typescript`、`aipark-next-chat`、`aipark-frontend-ui`、`aipark-scheduler-layering`。
+- 本 rule 只強制**跨層命名邊界**；衝突時以本檔＋`guides/naming-conventions.md` 為準。

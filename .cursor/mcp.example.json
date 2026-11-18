@@ -1,0 +1,34 @@
+{
+  "mcpServers": {
+    "langsmith": {
+      "command": "uvx",
+      "args": [
+        "langsmith-mcp-server"
+      ],
+      "env": {
+        "LANGSMITH_API_KEY": "YOUR_LANGSMITH_API_KEY"
+      }
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ],
+      "env": {
+        "CONTEXT7_API_KEY": "YOUR_CONTEXT7_API_KEY"
+      }
+    },
+    "jira": {
+      "command": "uvx",
+      "args": [
+        "mcp-atlassian"
+      ],
+      "env": {
+        "JIRA_URL": "https://your-jira-instance.atlassian.net",
+        "JIRA_USERNAME": "you@example.com",
+        "JIRA_API_TOKEN": "YOUR_JIRA_API_TOKEN"
+      }
+    }
+  }
+}

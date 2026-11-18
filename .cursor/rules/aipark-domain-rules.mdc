@@ -1,0 +1,13 @@
+---
+description: Domain rule engine — pure Python, no LLM, pytest-first
+globs: server/**/domain/**/*.py
+alwaysApply: false
+---
+
+# Domain rules
+
+- Pure functions / classes only. **No** `langchain*` / LLM imports in `domain/`.
+- Numbers, pivots, movement-type logic, BOM existence, order dedupe belong here — not in prompts.
+- Every public rule function should be covered by `server/tests/domain/`.
+- Return typed structures (dataclasses or plain dicts); nodes adapt them into graph state / messages.
+- Fail loudly on missing required columns; do not silently invent business values.

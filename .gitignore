@@ -25,9 +25,11 @@ frontend/CLAUDE.md
 
 # Agent / IDE — 個人本機工作區，勿推送以免衝突
 .claude/*
-.cursor/
-/AGENTS.md
 *.log
 .DS_Store
 Thumbs.db
 *.bat
+# .cursor：規範可進 work remote；本機產物／機密不進版控
+.cursor/temp/
+.cursor/mcp.json
+.cursor/**/pw-langsmith-profile/

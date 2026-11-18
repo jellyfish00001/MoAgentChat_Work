@@ -1,0 +1,50 @@
+---
+description: Scheduler／Job 分層與集中放置（對齊 ERS.Job 優點、避其坑）
+globs: scheduler/**/*,frontend/src/lib/schedule*.ts,frontend/src/components/schedule/**/*
+alwaysApply: false
+---
+
+# Scheduler 分層（勿零散）
+
+詳研對照：[guides/ers-job-layering.md](../guides/ers-job-layering.md)；運維口令：[guides/scheduler-coding.md](../guides/scheduler-coding.md)。
+
+## 依賴（不可逆）
+
+```text
+Job／Api → Application → Domain
+Infrastructure 實作 Application 介面
+```
+
+- Job／Api：**極薄**；禁止業務規則、禁止第二套執行管線、禁止直接 DbContext。
+- 唯一執行：`IScheduleRunExecutor`（due-scanner 與 run-now 共用）。
+- 唯一 DI 組裝：`Infrastructure/DependencyInjection.AddSchedulerCore`。
+
+## 檔案集中（禁止另起平行樹）
+
+| 放這裡 | 內容 |
+|--------|------|
+| `Domain/` | 實體、`enum`（一概念一檔）、純計算 |
+| `Application/Abstractions/` | 所有介面 |
+| `Application/Dtos/` | 所有 API DTO |
+| `Application/*Options.cs` | 設定綁定 POCO |
+| `Infrastructure/Persistence/` | DbContext、Repository、Migrations |
+| `Infrastructure/LangGraph/` | HTTP 適配 |
+| `Infrastructure/Notifications/` | `INotificationSender` 實作（本機 Draft） |
+
+禁止：在 Job／Api／前端再複製一份 enum／DTO／常數；禁止為每個公司任務新增 `XxxJob.cs`（用 `Schedules` + `Scope=Company`）。
+
+## 設定與開關
+
+- 排程**內容**（Prompt／週期／多筆）→ DB。
+- 宿主開關 → `appsettings`／env（例：`CompanySchedules:Enabled`）。
+- Hangfire 只養 **一條** due-scanner；註冊用 `AddOrUpdate<TJob>(j => j.RunAsync())`，**禁止**閉包捕捉 scoped 實例（ERS `JobRegister` 坑）。
+
+## Enum／映射
+
+- 新 enum → `Domain/`，不進 `Program.cs`。
+- DTO 轉換 → Application（手寫或單一 Profile）；不在 Job 做 mapping。
+
+## 對齊 ERS 該學／不學
+
+- **學**：`IJobBase` 精神（單一入口）、設定啟停、薄 Job 轉 Domain／Application、Hangfire Scope Activator、Contracts／Domain 介面中間層。
+- **不學**：Job 內 SFTP／DB 巨石；`RecurringJob` 綁死實例；手動 + Autofac 雙軌註冊；巨型單一 `Consts` 神檔。
