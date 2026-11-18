@@ -81,7 +81,7 @@ aif-gitlab.wistron.com/ai-platform/projects/
 | # | 項目 | 說明 | 狀態 |
 |---|---|---|---|
 | 10 | 本機開發 | LangGraph Studio | 進行中 |
-| 11 | Vault | Secret 改存 Vault | 待辦 |
+| 11 | Vault | QAS：`release/whq/arm-qas-01/finagent/default` 已含 LLM／Mail／`SCHEDULE_DB`／`SCHEDULE_JOB_KEY`（見 [schedule-deploy.md](docs/schedule-deploy.md)） | QAS 已補；PRD 另對應 |
 | 12 | 可觀測性 | LangSmith tracing | 進行中 |
 | 13 | Helm Repo 與 Armstrong 串接 | ITSR，提供 Namespace 和 Helm repo 路徑（須與 ASP 命名一致） | 等 #4、#9 |
 | 14 | CI/CD Pipeline 與部署 | 見第 4 節 | 待辦 |

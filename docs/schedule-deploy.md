@@ -80,10 +80,21 @@ flowchart TD
 - **必備** Vault／K8s Secret Value：`SCHEDULE_DB`（或 `ConnectionStrings__Scheduler`）＝Npgsql 連線字串；Api／Job **共用同一** Secret。  
 - 另：`SCHEDULE_JOB_KEY`、Hangfire 密碼、正式 `NOTIFICATION_INVOKE_URL` → Secret／Vault；`CompanySchedules:Enabled`、`Notification:Mode` → ConfigMap／環境變數即可。  
 
+**QAS Vault（已寫入，勿把密碼／連線字串寫進 Git）：**
+
+| 項目 | 值 |
+|---|---|
+| UI | `https://vault-dev.wistron.com:8200` → Secrets → `release` → `whq/arm-qas-01/finagent` |
+| KV 路徑 | `release/data/whq/arm-qas-01/finagent/default`（KV v2；UI 列表鍵名 `default`） |
+| 帳號（userpass） | `armwhq-finagent`（密碼僅存 Vault／個人保管，不進 repo） |
+| 排程相關鍵 | `SCHEDULE_DB`（Npgsql）、`SCHEDULE_JOB_KEY`（Agent／Api 共用；2026-11-18 寫入 version 6） |
+
+Helm／Washoku 須把上述 `default` Secret 注入 **server、scheduler-api、scheduler-job** Pod 環境變數（鍵名原樣）。缺 `SCHEDULE_DB` 時 Api／Job 啟動失敗。
+
 **Helm／Argo（另 repo）SRE 必改：**
 
 1. 刪除 Api／Job 的 sqlite volumeMount `/data`  
-2. 注入 `SCHEDULE_DB`；確認無殘留 `SCHEDULE_DB_PATH`  
+2. 注入 `SCHEDULE_DB`（與 `SCHEDULE_JOB_KEY`）；確認無殘留 `SCHEDULE_DB_PATH`  
 3. 滾動更新後：Pod Ready、Migrate 日誌成功、`/health` 顯示 `db=postgresql`  
 4. 映像須為移除 `SCHEDULE_DB_PATH` 預設後的 CI build（`qas-build-scheduler-api`／`job`）
 
