@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(SchedulerDbContext))]
-    [Migration("20261118004743_InitialPostgres")]
+    [Migration("20261118005459_InitialPostgres")]
     partial class InitialPostgres
     {
         /// <inheritdoc />
@@ -20,7 +20,6 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("scheduler")
                 .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
@@ -116,7 +115,7 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Scope", "Enabled", "NextRunAt");
 
-                    b.ToTable("Schedules", "scheduler");
+                    b.ToTable("Schedules");
                 });
 
             modelBuilder.Entity("AiPrepare.Scheduler.Domain.ScheduleRun", b =>
@@ -152,7 +151,7 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("ScheduleId");
 
-                    b.ToTable("ScheduleRuns", "scheduler");
+                    b.ToTable("ScheduleRuns");
                 });
 #pragma warning restore 612, 618
         }

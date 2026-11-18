@@ -35,7 +35,7 @@ app.Use(async (context, next) =>
 });
 
 /// <summary>健康檢查（標示 provider，不含連線機密）；探針用 GET。</summary>
-app.MapGet("/health", () => Results.Ok(new { ok = true, db = "postgresql", schema = "scheduler" }));
+app.MapGet("/health", () => Results.Ok(new { ok = true, db = "postgresql", schema = "public" }));
 
 /// <summary>列出使用者個人排程（不含公司 Scope；body.userId）。</summary>
 app.MapPost("/api/schedules/list", async (ListSchedulesRequest body, ScheduleService svc, CancellationToken ct) =>

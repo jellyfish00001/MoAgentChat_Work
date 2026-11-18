@@ -11,12 +11,8 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.EnsureSchema(
-                name: "scheduler");
-
             migrationBuilder.CreateTable(
                 name: "ScheduleRuns",
-                schema: "scheduler",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -35,7 +31,6 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Schedules",
-                schema: "scheduler",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -68,25 +63,21 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
 
             migrationBuilder.CreateIndex(
                 name: "IX_ScheduleRuns_ScheduleId",
-                schema: "scheduler",
                 table: "ScheduleRuns",
                 column: "ScheduleId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schedules_Enabled_NextRunAt",
-                schema: "scheduler",
                 table: "Schedules",
                 columns: new[] { "Enabled", "NextRunAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schedules_Scope_Enabled_NextRunAt",
-                schema: "scheduler",
                 table: "Schedules",
                 columns: new[] { "Scope", "Enabled", "NextRunAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Schedules_UserId",
-                schema: "scheduler",
                 table: "Schedules",
                 column: "UserId");
         }
@@ -95,12 +86,10 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ScheduleRuns",
-                schema: "scheduler");
+                name: "ScheduleRuns");
 
             migrationBuilder.DropTable(
-                name: "Schedules",
-                schema: "scheduler");
+                name: "Schedules");
         }
     }
 }

@@ -1,6 +1,6 @@
 # 流程 1：使用者設定排程後 — API 與 DB 協作
 
-本機：Chat UI → Scheduler Api（`:5055`）→ QAS PostgreSQL（schema `scheduler`）；到期由 Job（`:5056`）掃描並呼叫 LangGraph；可選通知（本機 **Draft 不實發**）。  
+本機：Chat UI → Scheduler Api（`:5055`）→ QAS PostgreSQL（schema `public`）；到期由 Job（`:5056`）掃描並呼叫 LangGraph；可選通知（本機 **Draft 不實發**）。  
 業務 API **統一 POST**（查詢亦同；僅 `/health` 用 GET）。  
 另見：[schedule-deploy.md](schedule-deploy.md)、[schedule-db.md](schedule-db.md)｜[`scheduler/README.md`](../scheduler/README.md)
 

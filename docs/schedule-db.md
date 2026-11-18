@@ -1,7 +1,7 @@
 # 流程 3：DB 更新與資料使用
 
 說明兩件事：（1）欄位／索引怎麼演進（EF Migration）；（2）執行期各表被誰讀、誰寫。  
-**現況**：QAS PostgreSQL（schema `scheduler`）+ 啟動時 `CREATE SCHEMA IF NOT EXISTS` → `Database.MigrateAsync()`。本機與部署共用同一契約：`SCHEDULE_DB`（部署＝Vault／Secret Value；本機可明文放 Development／環境變數）。
+**現況**：QAS PostgreSQL（schema **`public`**）+ 啟動時 `Database.MigrateAsync()`。本機與部署共用同一契約：`SCHEDULE_DB`（部署＝Vault／Secret Value；本機可明文放 Development／環境變數）。
 
 另見：[schedule-api.md](schedule-api.md)、[schedule-deploy.md](schedule-deploy.md)
 
@@ -115,7 +115,7 @@ flowchart TD
 2. 改實體後執行 `dotnet ef migrations add …`（startup＝Api），把產生的檔 commit。  
 3. 部署後只要 **Api 或 Job 有跑 `EnsureDbAsync`／`MigrateAsync`**，空庫或舊庫會自動追上。  
 4. 連線缺 `SCHEDULE_DB`／`ConnectionStrings:Scheduler` 時**啟動失敗**（不退回檔案庫）。  
-5. Migration 歷史表：`scheduler.__EFMigrationsHistory`。  
+5. Migration 歷史表：`public.__EFMigrationsHistory`。  
 6. **每次改表／欄**：同步更新本檔最下方「現行 Schema 快照」。
 
 ### D. 「資料使用」日常情境對照
@@ -138,7 +138,7 @@ flowchart TD
 
 ---
 
-## 現行 Schema 快照（PostgreSQL／`scheduler`）
+## 現行 Schema 快照（PostgreSQL／`public`）
 
 > 對齊 Migration：`InitialPostgres`（2026-11-18）。  
 > PG 型別以 EF／Npgsql 為準（Guid→uuid、DateTimeOffset→timestamptz、bool→boolean、enum→integer）。  
@@ -201,4 +201,4 @@ flowchart TD
 | `MigrationId` | 已套用的 migration 名稱 |
 | `ProductVersion` | EF 產品版本 |
 
-本機／QAS 若表對不上：確認 `SCHEDULE_DB` 指向正確庫，重啟 Api／Job 讓 `MigrateAsync` 追上；或用 MCP／DBeaver 查 `scheduler.__EFMigrationsHistory`。
+本機／QAS 若表對不上：確認 `SCHEDULE_DB` 指向正確庫，重啟 Api／Job 讓 `MigrateAsync` 追上；或用 MCP／DBeaver 查 `public.__EFMigrationsHistory`。

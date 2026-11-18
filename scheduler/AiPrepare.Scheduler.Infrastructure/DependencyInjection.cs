@@ -18,8 +18,8 @@ public static class DependencyInjection
         IConfiguration? configuration = null)
     {
         var cs = DbConnectionResolver.Resolve(configuration);
-        services.AddDbContext<SchedulerDbContext>(o => o.UseNpgsql(cs, npg =>
-            npg.MigrationsHistoryTable("__EFMigrationsHistory", "scheduler")));
+        // History／表皆在 public（對齊申請庫慣例，不另開 schema）
+        services.AddDbContext<SchedulerDbContext>(o => o.UseNpgsql(cs));
 
         // CompanySchedules:Enabled；環境變數 COMPANY_SCHEDULES_ENABLED 可覆寫
         var opts = services.AddOptions<CompanySchedulesOptions>();
@@ -61,13 +61,11 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>建立 scheduler schema（若不存在）後套用 EF Migrations。</summary>
+    /// <summary>套用 EF Migrations（表在 public）。</summary>
     public static async Task EnsureDbAsync(this IServiceProvider sp, CancellationToken ct = default)
     {
         using var scope = sp.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SchedulerDbContext>();
-        // History 表在 scheduler schema；空庫須先有 schema 才能 CreateIfNotExists
-        await db.Database.ExecuteSqlRawAsync("CREATE SCHEMA IF NOT EXISTS scheduler;", ct);
         await db.Database.MigrateAsync(ct);
     }
 }

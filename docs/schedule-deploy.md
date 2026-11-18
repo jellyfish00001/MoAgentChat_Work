@@ -76,8 +76,8 @@ flowchart TD
 ### C. DB 在部署裡放哪？
 
 - **禁止** sqlite PVC／`SCHEDULE_DB_PATH`／掛載 `/data/schedules.sqlite`。  
-- 排程庫＝**QAS／PRD PostgreSQL**（schema `scheduler`；可與 LangGraph checkpoint 分實例）。  
-- **必備** Vault／K8s Secret Value：`SCHEDULE_DB`（或 `ConnectionStrings__Scheduler`）＝Npgsql 連線字串（含 `Search Path=scheduler`）；Api／Job **共用同一** Secret。  
+- 排程庫＝**QAS／PRD PostgreSQL**（schema **`public`**；可與 LangGraph checkpoint 分實例）。  
+- **必備** Vault／K8s Secret Value：`SCHEDULE_DB`（或 `ConnectionStrings__Scheduler`）＝Npgsql 連線字串；Api／Job **共用同一** Secret。  
 - 另：`SCHEDULE_JOB_KEY`、Hangfire 密碼、正式 `NOTIFICATION_INVOKE_URL` → Secret／Vault；`CompanySchedules:Enabled`、`Notification:Mode` → ConfigMap／環境變數即可。  
 
 **Helm／Argo（另 repo）SRE 必改：**
@@ -104,7 +104,7 @@ flowchart TD
 1. CI 能推出 scheduler 映像到 Harbor（Dockerfile **無** `SCHEDULE_DB_PATH`）  
 2. Argo App Healthy／Synced，Api／Job Pod Ready；環境有 `SCHEDULE_DB`、無 `SCHEDULE_DB_PATH`  
 3. Api `/health` 回 `db=postgresql`；Job `/hangfire`（若開放）可見 `ProcessDueSchedulesJob`  
-4. Migrate 後存在 `scheduler.Schedules`／`ScheduleRuns`／`__EFMigrationsHistory`（含 `Scope`、`EmailTo`／`EmailCc`、`NotifyEnabled`、`DayOfMonth`、`AutoSendMail`）  
+4. Migrate 後存在 `public.Schedules`／`ScheduleRuns`／`__EFMigrationsHistory`（含 `Scope`、`EmailTo`／`EmailCc`、`NotifyEnabled`、`DayOfMonth`、`AutoSendMail`）  
 5. 建一筆個人排程可列表；公司列一般 userId 看不到  
 6. Draft：`ScheduleRuns.NotifyOutcome` 可見 `Draft:…` 或 `Skipped:…`，信箱無實信  
 
