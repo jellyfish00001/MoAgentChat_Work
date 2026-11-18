@@ -104,7 +104,8 @@ flowchart TD
 1. CI 能推出 scheduler 映像到 Harbor（Dockerfile **無** `SCHEDULE_DB_PATH`）  
 2. Argo App Healthy／Synced，Api／Job Pod Ready；環境有 `SCHEDULE_DB`、無 `SCHEDULE_DB_PATH`  
 3. Api `/health` 回 `db=postgresql`；Job `/hangfire`（若開放）可見 `ProcessDueSchedulesJob`  
-4. Migrate 後存在 `public.Schedules`／`ScheduleRuns`／`__EFMigrationsHistory`（含 `Scope`、`EmailTo`／`EmailCc`、`NotifyEnabled`、`DayOfMonth`、`AutoSendMail`）  
+4. Migrate 後存在 `public.schedules`／`schedule_runs`（snake_case 欄位＋ COMMENT）與 `__EFMigrationsHistory`  
+
 5. 建一筆個人排程可列表；公司列一般 userId 看不到  
 6. Draft：`ScheduleRuns.NotifyOutcome` 可見 `Draft:…` 或 `Skipped:…`，信箱無實信  
 

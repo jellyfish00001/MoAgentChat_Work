@@ -26,129 +26,201 @@ namespace AiPrepare.Scheduler.Infrastructure.Persistence.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasComment("主鍵");
 
                     b.Property<string>("ApiUrl")
                         .IsRequired()
                         .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("api_url")
+                        .HasComment("LangGraph base URL");
 
                     b.Property<string>("AssistantId")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("assistant_id")
+                        .HasComment("LangGraph assistant／graph id，預設 agent");
 
                     b.Property<bool>("AutoSendMail")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_send_mail")
+                        .HasComment("此排程 Agent 寄信是否免逐封確認");
 
                     b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasComment("建立時間（UTC）");
 
                     b.Property<int?>("DayOfMonth")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("day_of_month")
+                        .HasComment("每月幾號（Monthly，1–31）");
 
                     b.Property<string>("EmailCc")
                         .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("email_cc")
+                        .HasComment("副本 Cc（可空）");
 
                     b.Property<string>("EmailTo")
                         .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
+                        .HasColumnType("character varying(1024)")
+                        .HasColumnName("email_to")
+                        .HasComment("收件 To（逗號或分號分隔）");
 
                     b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled")
+                        .HasComment("是否納入 due 掃描");
 
                     b.Property<int?>("IntervalHours")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("interval_hours")
+                        .HasComment("每 N 小時觸發（EveryNHours）");
 
                     b.Property<int>("Kind")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("kind")
+                        .HasComment("週期：Daily／Weekly／EveryNHours／Monthly");
 
                     b.Property<DateTimeOffset?>("LastRunAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_run_at")
+                        .HasComment("上次執行結束時間（UTC）");
 
                     b.Property<DateTimeOffset>("NextRunAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_run_at")
+                        .HasComment("下次到期時間（UTC）");
 
                     b.Property<bool>("NotifyEnabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("notify_enabled")
+                        .HasComment("執行結束後是否走通知管線");
 
                     b.Property<string>("Prompt")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("prompt")
+                        .HasComment("送給 LangGraph 的 human message");
 
                     b.Property<int>("Scope")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("scope")
+                        .HasComment("0=User 個人／1=Company 公司（一般列表不回傳）");
 
                     b.Property<TimeOnly?>("TimeOfDay")
-                        .HasColumnType("time without time zone");
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("time_of_day")
+                        .HasComment("日／週觸發的牆鐘時間");
 
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone")
+                        .HasComment("計算下次執行用時區，預設 Asia/Taipei");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("title")
+                        .HasComment("標題（亦可當通知主旨前綴）");
 
                     b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at")
+                        .HasComment("最後更新時間（UTC）");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("user_id")
+                        .HasComment("擁有者；公司列常用 company");
 
                     b.Property<int?>("Weekday")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("weekday")
+                        .HasComment("每週觸發的星期（Weekly）");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_schedules");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_schedules_user_id");
 
-                    b.HasIndex("Enabled", "NextRunAt");
+                    b.HasIndex("Enabled", "NextRunAt")
+                        .HasDatabaseName("ix_schedules_enabled_next_run_at");
 
-                    b.HasIndex("Scope", "Enabled", "NextRunAt");
+                    b.HasIndex("Scope", "Enabled", "NextRunAt")
+                        .HasDatabaseName("ix_schedules_scope_enabled_next_run_at");
 
-                    b.ToTable("Schedules");
+                    b.ToTable("schedules", null, t =>
+                        {
+                            t.HasComment("排程定義（個人或公司）；到期掃描看 enabled／next_run_at");
+                        });
                 });
 
             modelBuilder.Entity("AiPrepare.Scheduler.Domain.ScheduleRun", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasComment("主鍵");
 
                     b.Property<string>("Error")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("error")
+                        .HasComment("失敗訊息");
 
                     b.Property<DateTimeOffset?>("FinishedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finished_at")
+                        .HasComment("結束時間（UTC）");
 
                     b.Property<string>("NotifyOutcome")
                         .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("notify_outcome")
+                        .HasComment("通知摘要：Skipped／Draft:…／Failed:…");
 
                     b.Property<Guid>("ScheduleId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("schedule_id")
+                        .HasComment("所屬排程 Id（無 FK 強制）");
 
                     b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at")
+                        .HasComment("開始時間（UTC）");
 
                     b.Property<int>("Status")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("status")
+                        .HasComment("Pending／Running／Succeeded／Failed");
 
                     b.Property<string>("ThreadId")
                         .HasMaxLength(128)
-                        .HasColumnType("character varying(128)");
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("thread_id")
+                        .HasComment("LangGraph thread id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_schedule_runs");
 
-                    b.HasIndex("ScheduleId");
+                    b.HasIndex("ScheduleId")
+                        .HasDatabaseName("ix_schedule_runs_schedule_id");
 
-                    b.ToTable("ScheduleRuns");
+                    b.ToTable("schedule_runs", null, t =>
+                        {
+                            t.HasComment("單次排程執行紀錄（對應一次 LangGraph thread）");
+                        });
                 });
 #pragma warning restore 612, 618
         }

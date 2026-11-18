@@ -18,8 +18,10 @@ public static class DependencyInjection
         IConfiguration? configuration = null)
     {
         var cs = DbConnectionResolver.Resolve(configuration);
-        // History／表皆在 public（對齊申請庫慣例，不另開 schema）
-        services.AddDbContext<SchedulerDbContext>(o => o.UseNpgsql(cs));
+        // public schema；表／欄用 snake_case（PostgreSQL 慣例），C# 實體仍 PascalCase
+        services.AddDbContext<SchedulerDbContext>(o => o
+            .UseNpgsql(cs)
+            .UseSnakeCaseNamingConvention());
 
         // CompanySchedules:Enabled；環境變數 COMPANY_SCHEDULES_ENABLED 可覆寫
         var opts = services.AddOptions<CompanySchedulesOptions>();
