@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AiPrepare.Scheduler.Infrastructure.Persistence;
 
-/// <summary>SQLite EF 仓储；DateTimeOffset 比較／排序在記憶體完成（provider 限制）。</summary>
+/// <summary>PostgreSQL EF 仓储；DateTimeOffset 比較／排序交由 SQL 下推。</summary>
 public sealed class EfScheduleRepository : IScheduleRepository
 {
     private readonly SchedulerDbContext _db;
@@ -16,24 +16,19 @@ public sealed class EfScheduleRepository : IScheduleRepository
     public Task<Schedule?> GetAsync(Guid id, CancellationToken ct = default)
         => _db.Schedules.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, ct);
 
-    /// <summary>依使用者列出個人排程；記憶體依 UpdatedAt 降序。</summary>
+    /// <summary>依使用者列出個人排程；依 UpdatedAt 降序。</summary>
     public async Task<IReadOnlyList<Schedule>> ListByUserAsync(string userId, CancellationToken ct = default)
-    {
-        // SQLite 無法在 SQL 對 DateTimeOffset ORDER BY；且必須排除公司列
-        var rows = await _db.Schedules.AsNoTracking()
+        => await _db.Schedules.AsNoTracking()
             .Where(x => x.UserId == userId && x.Scope == ScheduleScope.User)
+            .OrderByDescending(x => x.UpdatedAt)
             .ToListAsync(ct);
-        return rows.OrderByDescending(x => x.UpdatedAt).ToList();
-    }
 
-    /// <summary>列出公司排程；記憶體依 UpdatedAt 降序。</summary>
+    /// <summary>列出公司排程；依 UpdatedAt 降序。</summary>
     public async Task<IReadOnlyList<Schedule>> ListCompanyAsync(CancellationToken ct = default)
-    {
-        var rows = await _db.Schedules.AsNoTracking()
+        => await _db.Schedules.AsNoTracking()
             .Where(x => x.Scope == ScheduleScope.Company)
+            .OrderByDescending(x => x.UpdatedAt)
             .ToListAsync(ct);
-        return rows.OrderByDescending(x => x.UpdatedAt).ToList();
-    }
 
     /// <summary>新增排程列。</summary>
     public async Task AddAsync(Schedule schedule, CancellationToken ct = default)
@@ -64,14 +59,12 @@ public sealed class EfScheduleRepository : IScheduleRepository
         bool includeCompany,
         CancellationToken ct = default)
     {
-        // SQLite 無法轉譯 DateTimeOffset 比較 → 先載入 Enabled 再篩選
-        // 必須 AsNoTracking：Executor 之後會用 GetAsync 取另一個實例再 Update，若這裡有追蹤會 Id 衝突
-        var rows = await _db.Schedules.AsNoTracking().Where(x => x.Enabled).ToListAsync(ct);
-        return rows
-            .Where(x => x.NextRunAt <= untilUtc)
-            .Where(x => includeCompany || x.Scope == ScheduleScope.User)
-            .OrderBy(x => x.NextRunAt)
-            .ToList();
+        // AsNoTracking：Executor 之後會用 GetAsync 取另一個實例再 Update，避免追蹤 Id 衝突
+        var q = _db.Schedules.AsNoTracking()
+            .Where(x => x.Enabled && x.NextRunAt <= untilUtc);
+        if (!includeCompany)
+            q = q.Where(x => x.Scope == ScheduleScope.User);
+        return await q.OrderBy(x => x.NextRunAt).ToListAsync(ct);
     }
 
     /// <summary>依 Id 取得執行紀錄。</summary>
@@ -93,20 +86,16 @@ public sealed class EfScheduleRepository : IScheduleRepository
     }
 
     /// <summary>最近一次執行（依 StartedAt）。</summary>
-    public async Task<ScheduleRun?> GetLatestRunAsync(Guid scheduleId, CancellationToken ct = default)
-    {
-        var rows = await _db.ScheduleRuns.AsNoTracking()
+    public Task<ScheduleRun?> GetLatestRunAsync(Guid scheduleId, CancellationToken ct = default)
+        => _db.ScheduleRuns.AsNoTracking()
             .Where(x => x.ScheduleId == scheduleId)
-            .ToListAsync(ct);
-        return rows.OrderByDescending(x => x.StartedAt).FirstOrDefault();
-    }
+            .OrderByDescending(x => x.StartedAt)
+            .FirstOrDefaultAsync(ct);
 
     /// <summary>某排程全部執行紀錄（新到舊）。</summary>
     public async Task<IReadOnlyList<ScheduleRun>> ListRunsAsync(Guid scheduleId, CancellationToken ct = default)
-    {
-        var rows = await _db.ScheduleRuns.AsNoTracking()
+        => await _db.ScheduleRuns.AsNoTracking()
             .Where(x => x.ScheduleId == scheduleId)
+            .OrderByDescending(x => x.StartedAt)
             .ToListAsync(ct);
-        return rows.OrderByDescending(x => x.StartedAt).ToList();
-    }
 }

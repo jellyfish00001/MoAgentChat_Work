@@ -1,6 +1,6 @@
 # 流程 1：使用者設定排程後 — API 與 DB 協作
 
-本機：Chat UI → Scheduler Api（`:5055`）→ SQLite；到期由 Job（`:5056`）掃描並呼叫 LangGraph；可選通知（本機 **Draft 不實發**）。  
+本機：Chat UI → Scheduler Api（`:5055`）→ QAS PostgreSQL（schema `scheduler`）；到期由 Job（`:5056`）掃描並呼叫 LangGraph；可選通知（本機 **Draft 不實發**）。  
 業務 API **統一 POST**（查詢亦同；僅 `/health` 用 GET）。  
 另見：[schedule-deploy.md](schedule-deploy.md)、[schedule-db.md](schedule-db.md)｜[`scheduler/README.md`](../scheduler/README.md)
 
@@ -133,6 +133,6 @@ flowchart TD
 ### D. 本機怎麼對一下？
 
 1. Api／Job 腳本見 `scheduler/README.md`  
-2. DB 預設：`D:\ai_prepare_data\schedules.sqlite`  
+2. DB：環境變數 `SCHEDULE_DB` 或本機 `ConnectionStrings:Scheduler`（見 `scheduler/.env.example`）  
 3. 列表：`POST http://127.0.0.1:5055/api/schedules/list`，body `{"userId":"local-demo-user"}`  
 4. 執行紀錄：`POST .../api/schedules/{id}/runs/list`（看 `notifyOutcome`，應為 `Draft:…` 或 `Skipped:…`）

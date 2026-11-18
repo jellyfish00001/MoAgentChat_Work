@@ -9,18 +9,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AiPrepare.Scheduler.Infrastructure;
 
-/// <summary>Api／Job 共用的 DI 組裝（SQLite + Application + LangGraph + 通知）。</summary>
+/// <summary>Api／Job 共用的 DI 組裝（PostgreSQL／Npgsql + Application + LangGraph + 通知）。</summary>
 public static class DependencyInjection
 {
-    /// <summary>註冊核心服務；資料庫檔放專案外路徑；綁定公司掃描與通知開關。</summary>
+    /// <summary>註冊核心服務；連線由 DbConnectionResolver 解析；綁定公司掃描與通知開關。</summary>
     public static IServiceCollection AddSchedulerCore(
         this IServiceCollection services,
-        string sqlitePath,
         IConfiguration? configuration = null)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(sqlitePath)!);
-        var cs = $"Data Source={sqlitePath}";
-        services.AddDbContext<SchedulerDbContext>(o => o.UseSqlite(cs));
+        var cs = DbConnectionResolver.Resolve(configuration);
+        services.AddDbContext<SchedulerDbContext>(o => o.UseNpgsql(cs, npg =>
+            npg.MigrationsHistoryTable("__EFMigrationsHistory", "scheduler")));
 
         // CompanySchedules:Enabled；環境變數 COMPANY_SCHEDULES_ENABLED 可覆寫
         var opts = services.AddOptions<CompanySchedulesOptions>();
@@ -62,11 +61,13 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>套用 EF Migrations（取代 EnsureCreated，以支援部署後加欄）。</summary>
+    /// <summary>建立 scheduler schema（若不存在）後套用 EF Migrations。</summary>
     public static async Task EnsureDbAsync(this IServiceProvider sp, CancellationToken ct = default)
     {
         using var scope = sp.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<SchedulerDbContext>();
+        // History 表在 scheduler schema；空庫須先有 schema 才能 CreateIfNotExists
+        await db.Database.ExecuteSqlRawAsync("CREATE SCHEMA IF NOT EXISTS scheduler;", ct);
         await db.Database.MigrateAsync(ct);
     }
 }

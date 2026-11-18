@@ -5,3 +5,5 @@
 .vs/
 *.sqlite
 *.sqlite-*
+.env
+**/appsettings.Development.json

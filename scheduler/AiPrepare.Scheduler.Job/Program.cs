@@ -1,4 +1,5 @@
 using AiPrepare.Scheduler.Infrastructure;
+using AiPrepare.Scheduler.Infrastructure.Persistence;
 using AiPrepare.Scheduler.Job;
 using Hangfire;
 using Hangfire.Dashboard.BasicAuthorization;
@@ -7,15 +8,15 @@ using Hangfire.MemoryStorage;
 // Hangfire 宿主：只註冊薄 Job；業務在 Application。
 var builder = WebApplication.CreateBuilder(args);
 
-var sqlitePath = builder.Configuration["SCHEDULE_DB_PATH"]
-    ?? Environment.GetEnvironmentVariable("SCHEDULE_DB_PATH")
-    ?? @"D:\ai_prepare_data\schedules.sqlite";
+// 提早解析連線；缺設定時啟動失敗（禁止退回 SQLite）
+_ = DbConnectionResolver.Resolve(builder.Configuration);
+
 var hangfireUser = builder.Configuration["hangfire:login"] ?? "admin";
 var hangfirePass = builder.Configuration["hangfire:password"]
     ?? Environment.GetEnvironmentVariable("HANGFIRE_PASSWORD")
     ?? "admin";
 
-builder.Services.AddSchedulerCore(sqlitePath, builder.Configuration);
+builder.Services.AddSchedulerCore(builder.Configuration);
 builder.Services.AddHangfire(c => c
     .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
     .UseSimpleAssemblyNameTypeSerializer()
@@ -55,6 +56,6 @@ RecurringJob.AddOrUpdate<ProcessDueSchedulesJob>(
     Cron.Minutely,
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Local });
 
-app.MapGet("/health", () => Results.Ok(new { ok = true, hangfire = "/hangfire" }));
+app.MapGet("/health", () => Results.Ok(new { ok = true, hangfire = "/hangfire", db = "postgresql" }));
 // k8s 由 ASPNETCORE_URLS 指定（容器內要聽 0.0.0.0）；本機預設只聽 loopback
 app.Run(app.Configuration["urls"] ?? "http://127.0.0.1:5056");

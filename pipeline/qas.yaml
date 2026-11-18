@@ -35,7 +35,8 @@ qas-build-frontend:
         - pipeline/**/*
         - .gitlab-ci.yml
 
-# scheduler 一個資料夾出兩個 image（Api／Job），共用同一份原始碼
+# scheduler 一個資料夾出兩個 image（Api／Job），共用同一份原始碼。
+# 執行期 DB：Vault／Secret 注入 SCHEDULE_DB（PostgreSQL）；映像內不再設 SCHEDULE_DB_PATH／sqlite PVC。
 .qas-scheduler-rules:
   rules:
     - if: $CI_COMMIT_REF_NAME == $DEPLOY_BRANCH

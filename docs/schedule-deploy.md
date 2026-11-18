@@ -75,9 +75,17 @@ flowchart TD
 
 ### C. DB 在部署裡放哪？
 
-- **不要**把本機路徑 `D:\ai_prepare_data\schedules.sqlite` 帶上 K8s。  
-- 預估改 **PostgreSQL**（與 LangGraph 用庫可分開實例，但都應是正式 DB 服務）。  
-- 連線字串、`SCHEDULE_JOB_KEY`、Hangfire 密碼、正式 `NOTIFICATION_INVOKE_URL` → Secret／Vault；`CompanySchedules:Enabled`、`Notification:Mode` → ConfigMap／環境變數即可。
+- **禁止** sqlite PVC／`SCHEDULE_DB_PATH`／掛載 `/data/schedules.sqlite`。  
+- 排程庫＝**QAS／PRD PostgreSQL**（schema `scheduler`；可與 LangGraph checkpoint 分實例）。  
+- **必備** Vault／K8s Secret Value：`SCHEDULE_DB`（或 `ConnectionStrings__Scheduler`）＝Npgsql 連線字串（含 `Search Path=scheduler`）；Api／Job **共用同一** Secret。  
+- 另：`SCHEDULE_JOB_KEY`、Hangfire 密碼、正式 `NOTIFICATION_INVOKE_URL` → Secret／Vault；`CompanySchedules:Enabled`、`Notification:Mode` → ConfigMap／環境變數即可。  
+
+**Helm／Argo（另 repo）SRE 必改：**
+
+1. 刪除 Api／Job 的 sqlite volumeMount `/data`  
+2. 注入 `SCHEDULE_DB`；確認無殘留 `SCHEDULE_DB_PATH`  
+3. 滾動更新後：Pod Ready、Migrate 日誌成功、`/health` 顯示 `db=postgresql`  
+4. 映像須為移除 `SCHEDULE_DB_PATH` 預設後的 CI build（`qas-build-scheduler-api`／`job`）
 
 ### D. 通知（郵件）部署注意
 
@@ -91,13 +99,13 @@ flowchart TD
 - 將 `CompanySchedules:Enabled=false`（或 env `COMPANY_SCHEDULES_ENABLED=false`）後重載／重啟 Job Pod。  
 - 效果：due-scanner **不再撿** `Scope=Company`；個人排程照常；DB 裡公司列仍在，只是不跑。
 
-### F. 上線前檢查清單（預估）
+### F. 上線前檢查清單
 
-1. CI 能推出 scheduler 映像到 Harbor  
-2. Argo App Healthy／Synced，Api／Job Pod Ready  
-3. Api `/health` 正常；Job `/hangfire`（若開放）可見 `ProcessDueSchedulesJob`  
-4. 對 PG 執行 Migrate 後存在 `Schedules.Scope`、`EmailTo`／`EmailCc`／`NotifyEnabled`  
+1. CI 能推出 scheduler 映像到 Harbor（Dockerfile **無** `SCHEDULE_DB_PATH`）  
+2. Argo App Healthy／Synced，Api／Job Pod Ready；環境有 `SCHEDULE_DB`、無 `SCHEDULE_DB_PATH`  
+3. Api `/health` 回 `db=postgresql`；Job `/hangfire`（若開放）可見 `ProcessDueSchedulesJob`  
+4. Migrate 後存在 `scheduler.Schedules`／`ScheduleRuns`／`__EFMigrationsHistory`（含 `Scope`、`EmailTo`／`EmailCc`、`NotifyEnabled`、`DayOfMonth`、`AutoSendMail`）  
 5. 建一筆個人排程可列表；公司列一般 userId 看不到  
-6. 本機 Draft：`ScheduleRuns.NotifyOutcome` 可見 `Draft:…` 或 `Skipped:…`，信箱無實信  
+6. Draft：`ScheduleRuns.NotifyOutcome` 可見 `Draft:…` 或 `Skipped:…`，信箱無實信  
 
 實際專案名／Namespace 以 WiCOP 與 SRE 申請為準（文件中常寫 `finagent`／Harbor `k8sprdwhqfin-ai-agent`）。

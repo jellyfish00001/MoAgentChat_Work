@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AiPrepare.Scheduler.Infrastructure.Persistence;
 
-/// <summary>排程 SQLite DbContext。</summary>
+/// <summary>排程 PostgreSQL DbContext（schema：scheduler）。</summary>
 public sealed class SchedulerDbContext : DbContext
 {
     /// <summary>標準 EF 建構。</summary>
@@ -12,9 +12,10 @@ public sealed class SchedulerDbContext : DbContext
     public DbSet<Schedule> Schedules => Set<Schedule>();
     public DbSet<ScheduleRun> ScheduleRuns => Set<ScheduleRun>();
 
-    /// <summary>索引與長度限制（利於 due 掃描與使用者列表）。</summary>
+    /// <summary>預設 schema、索引與長度限制（利於 due 掃描與使用者列表）。</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDefaultSchema("scheduler");
         modelBuilder.Entity<Schedule>(e =>
         {
             e.HasKey(x => x.Id);

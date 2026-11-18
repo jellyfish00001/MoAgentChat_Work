@@ -1,12 +1,12 @@
-# 流程 3：DB 更新與資料使用（預估）
+# 流程 3：DB 更新與資料使用
 
 說明兩件事：（1）欄位／索引怎麼演進（EF Migration）；（2）執行期各表被誰讀、誰寫。  
-本機現況：SQLite + 啟動時 `Database.MigrateAsync()`；正式預估：PostgreSQL + 另產 Npgsql Migration。
+**現況**：QAS PostgreSQL（schema `scheduler`）+ 啟動時 `CREATE SCHEMA IF NOT EXISTS` → `Database.MigrateAsync()`。本機與部署共用同一契約：`SCHEDULE_DB`（部署＝Vault／Secret Value；本機可明文放 Development／環境變數）。
 
 另見：[schedule-api.md](schedule-api.md)、[schedule-deploy.md](schedule-deploy.md)
 
 > 預覽：`Ctrl+Shift+V`。圖太小請用預覽縮放。  
-> **SQLite 不便查看時**：請直接看本檔**最下方「現行 Schema 快照」**；短時間有欄位變更時一併改該段。
+> 表結構亦可查本檔最下方「現行 Schema 快照」，或以 Cursor MCP `scheduler-pg`（`SCHEDULE_DB_URL`）唯讀查詢。
 
 ---
 
@@ -111,11 +111,11 @@ flowchart TD
 
 ### C. Schema 更新（加欄）實際要注意什麼？
 
-1. **本機／正式都不要用**舊的 `EnsureCreated` 加欄（加不出新欄）。  
-2. 改實體後執行 `dotnet ef migrations add …`，把產生的檔 commit。  
-3. 部署後只要 **Api 或 Job 有跑 `MigrateAsync`**，空庫或舊庫會自動追上。  
-4. 本機若 DB 是很早以前 EnsureCreated、沒有 `__EFMigrationsHistory`：備份後刪 sqlite 再啟動最省事。  
-5. 換成 **PostgreSQL** 時：換 `UseNpgsql`，並為 PG **重新產生** Migration；不要假設 SQLite 的 migration 檔可直接套用。  
+1. **不要用** `EnsureCreated` 加欄。  
+2. 改實體後執行 `dotnet ef migrations add …`（startup＝Api），把產生的檔 commit。  
+3. 部署後只要 **Api 或 Job 有跑 `EnsureDbAsync`／`MigrateAsync`**，空庫或舊庫會自動追上。  
+4. 連線缺 `SCHEDULE_DB`／`ConnectionStrings:Scheduler` 時**啟動失敗**（不退回檔案庫）。  
+5. Migration 歷史表：`scheduler.__EFMigrationsHistory`。  
 6. **每次改表／欄**：同步更新本檔最下方「現行 Schema 快照」。
 
 ### D. 「資料使用」日常情境對照
@@ -138,10 +138,10 @@ flowchart TD
 
 ---
 
-## 現行 Schema 快照（暫代 SQLite 檢視）
+## 現行 Schema 快照（PostgreSQL／`scheduler`）
 
-> 對齊 Migration：`InitialCreateWithScope` + `AddScheduleNotificationFields`（2026-11-05）。  
-> SQLite 型別以 EF 為準（Guid／DateTimeOffset／bool／enum 多存 TEXT／INTEGER）。  
+> 對齊 Migration：`InitialPostgres`（2026-11-18）。  
+> PG 型別以 EF／Npgsql 為準（Guid→uuid、DateTimeOffset→timestamptz、bool→boolean、enum→integer）。  
 > **有改實體就改這裡**，短時間內以此為準。
 
 ### 表 `Schedules`
@@ -155,7 +155,9 @@ flowchart TD
 | `Prompt` | string | N | 給 LangGraph 的 human message |
 | `AssistantId` | string(128) | N | 預設 `agent` |
 | `ApiUrl` | string(512) | N | LangGraph base URL |
-| `Kind` | enum int | N | Daily／Weekly／EveryNHours |
+| `Kind` | enum int | N | Daily／Weekly／EveryNHours／Monthly |
+| `DayOfMonth` | int? | Y | 每月幾號（Monthly） |
+| `AutoSendMail` | bool | N | 此排程 Agent 寄信是否免逐封確認 |
 | `TimeOfDay` | TimeOnly | Y | 日／週觸發牆鐘時間 |
 | `Weekday` | DayOfWeek? | Y | 每週用 |
 | `IntervalHours` | int? | Y | 每 N 小時 |
@@ -199,4 +201,4 @@ flowchart TD
 | `MigrationId` | 已套用的 migration 名稱 |
 | `ProductVersion` | EF 產品版本 |
 
-本機若看不到此表且欄位對不上：備份後刪 `SCHEDULE_DB_PATH`（預設 `D:\ai_prepare_data\schedules.sqlite`）再啟動 Api／Job。
+本機／QAS 若表對不上：確認 `SCHEDULE_DB` 指向正確庫，重啟 Api／Job 讓 `MigrateAsync` 追上；或用 MCP／DBeaver 查 `scheduler.__EFMigrationsHistory`。

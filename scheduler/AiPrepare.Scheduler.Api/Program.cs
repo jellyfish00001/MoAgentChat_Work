@@ -2,20 +2,20 @@ using AiPrepare.Scheduler.Application;
 using AiPrepare.Scheduler.Application.Abstractions;
 using AiPrepare.Scheduler.Application.Dtos;
 using AiPrepare.Scheduler.Infrastructure;
+using AiPrepare.Scheduler.Infrastructure.Persistence;
 using Microsoft.Extensions.Options;
 
 // 極薄 API 宿主：只做 CORS／JobKey／轉呼叫 Application。
 // 業務 API 統一 POST（查詢亦同）；僅 /health 保留 GET 供探針。
 var builder = WebApplication.CreateBuilder(args);
 
-var sqlitePath = builder.Configuration["SCHEDULE_DB_PATH"]
-    ?? Environment.GetEnvironmentVariable("SCHEDULE_DB_PATH")
-    ?? @"D:\ai_prepare_data\schedules.sqlite";
+// 提早解析連線；缺設定時啟動失敗（禁止退回 SQLite）
+_ = DbConnectionResolver.Resolve(builder.Configuration);
 var jobKey = builder.Configuration["JOB_KEY"]
     ?? Environment.GetEnvironmentVariable("SCHEDULE_JOB_KEY")
     ?? "dev-job-key";
 
-builder.Services.AddSchedulerCore(sqlitePath, builder.Configuration);
+builder.Services.AddSchedulerCore(builder.Configuration);
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins("http://localhost:3000").AllowAnyHeader().AllowAnyMethod()));
 
@@ -34,8 +34,8 @@ app.Use(async (context, next) =>
     }
 });
 
-/// <summary>健康檢查（含 DB 路徑，不含機密）；探針用 GET。</summary>
-app.MapGet("/health", () => Results.Ok(new { ok = true, db = sqlitePath }));
+/// <summary>健康檢查（標示 provider，不含連線機密）；探針用 GET。</summary>
+app.MapGet("/health", () => Results.Ok(new { ok = true, db = "postgresql", schema = "scheduler" }));
 
 /// <summary>列出使用者個人排程（不含公司 Scope；body.userId）。</summary>
 app.MapPost("/api/schedules/list", async (ListSchedulesRequest body, ScheduleService svc, CancellationToken ct) =>

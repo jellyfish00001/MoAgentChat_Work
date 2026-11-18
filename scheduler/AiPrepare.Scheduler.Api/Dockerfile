@@ -23,9 +23,9 @@ ARG BUILD_ID=local
 ENV BUILD_ID=${BUILD_ID}
 LABEL build-id=${BUILD_ID}
 
-# SQLite 放 /data（k8s 掛 PVC）；Program.cs 讀 urls（ASPNETCORE_URLS）決定監聽位址
-ENV ASPNETCORE_URLS=http://+:8080 \
-    SCHEDULE_DB_PATH=/data/schedules.sqlite
+# DB 連線由 Vault／K8s Secret 注入 SCHEDULE_DB（或 ConnectionStrings__Scheduler）；勿在映像內寫死密碼
+# Program.cs 讀 ASPNETCORE_URLS 決定監聽位址
+ENV ASPNETCORE_URLS=http://+:8080
 
 USER 1000
 EXPOSE 8080
